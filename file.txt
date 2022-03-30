@@ -12,11 +12,20 @@ git add <filename> #adds a file to the repository (locally)
 
 git commit -m <message> #commit all the changes that have been added (locally)
 
+git commit -am <message> #shorthand way of adding committing all changed files
+
 git push #push the commits to github
 
 git pull #get the updated repository files from github
 
 git status #get the current status of the local repository relative to github's
+
+
+git branch #list all branches
+
+git checkout -b <branch name> #create new branch and switch to it
+
+git checkout <name> #switch branches
 
 
 
