@@ -6,3 +6,17 @@ Components:
     - MySQL database
 
 
+Git:
+
+git add <filename> #adds a file to the repository (locally)
+
+git commit -m <message> #commit all the changes that have been added (locally)
+
+git push #push the commits to github
+
+git pull #get the updated repository files from github
+
+git status #get the current status of the local repository relative to github's
+
+
+
