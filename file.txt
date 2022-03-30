@@ -27,5 +27,7 @@ git checkout -b <branch name> #create new branch and switch to it
 
 git checkout <name> #switch branches
 
+git merge <name> #merge a branch back to main branch
+
 
 
