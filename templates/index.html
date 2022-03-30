@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Home
+{% endblock %}
+
+<!--Placeholder body, add form later-->
+{% block main %}
+<body>
+    <h2>Authors</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in authors %}
+                <tr>
+                    <td>{{ row["first_name"] }} {{ row["last_name"] }}</td>
+            {% endfor %}
+                </tr>
+        </tbody>
+    </table>
+</body>
+
+{% endblock %}
