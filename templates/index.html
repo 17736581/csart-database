@@ -4,24 +4,21 @@
     Home
 {% endblock %}
 
-<!--Placeholder body, add form later-->
+<!--Placeholder body, add landing page later-->
 {% block main %}
-<body>
-    <h2>Authors</h2>
-    <table>
-        <thead>
+<h2>Authors</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in authors %}
             <tr>
-                <th>Name</th>
+                <td>{{ row["first_name"] }} {{ row["last_name"] }}</td>
+        {% endfor %}
             </tr>
-        </thead>
-        <tbody>
-            {% for row in authors %}
-                <tr>
-                    <td>{{ row["first_name"] }} {{ row["last_name"] }}</td>
-            {% endfor %}
-                </tr>
-        </tbody>
-    </table>
-</body>
-
+    </tbody>
+</table>
 {% endblock %}

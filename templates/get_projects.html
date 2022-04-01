@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Projects
+{% endblock %}
+
+{% block main %}
+<body>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Author</th>
+                <th>Title</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in projects %}
+                <tr>
+                    <td>{{ row["first_name"] }} {{ row["last_name"] }}</td>
+                    <td>{{ row["project_name"] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+{% endblock %}

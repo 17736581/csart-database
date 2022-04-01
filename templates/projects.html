@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Projects
+{% endblock %}
+
+{% block main %}
+<body>
+    <h3>Project Search Form</h3>
+    <form action="/projects" method="post">
+        <input name="author" type="text" placeholder="Author">
+        <input name="keyword" type="text" placeholder="Keyword">
+        <input name="type" type="text" placeholder="Type">
+        <input type="submit">
+    </form>
+</body>
+
+{% endblock %}

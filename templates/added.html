@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Added
+{% endblock %}
+
+{% block main %}
+<table>
+    {% for key,value in form_data.items() %}
+    <tr><td>Key: {{ key }}, Value: {{ value }}</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}
