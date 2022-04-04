@@ -1,3 +1,6 @@
+#Set up environment variable
+#$env:FLASK_APP = "application"
+
 from flask import Flask, render_template, request
 from flask_mysqldb import MySQL
 
