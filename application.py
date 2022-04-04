@@ -50,11 +50,16 @@ def add():
     if request.method == "POST":
         form_data = request.form
         cursor = mysql.connection.cursor()
-        #print(type(form_data["url"]))
+        print(form_data)
         query = """INSERT INTO projects(project_name, url, start_date, end_date, release_date, country, funding_org, funding_amount) 
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
+        for i in form_data:
+            for j, k in i:
+                if k == "":
+                    k = None
+        print(form_data)
         cursor.execute(query, [form_data["project_name"], form_data["url"], form_data["start_date"], form_data["end_date"], form_data["release_date"], form_data["country"], form_data["funding_org"], form_data["funding_amount"]])
-        mysql.connection.commit()
+    #    mysql.connection.commit()
         return render_template("added.html", form_data=form_data)
 
     
