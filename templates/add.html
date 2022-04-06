@@ -1,5 +1,30 @@
 {% extends "layout.html" %}
 
+{% block head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+    $(document).ready(function() {
+        var author_count = 1;
+        var wrapper = $("#container1");
+        var add_button = $("#add_form_field");
+
+        var x = 1;
+        $(add_button).click(function(e) {
+            e.preventDefault();
+            x++;
+            $(wrapper).append(`<div class="form-group"><div class="input-group"><input class="form-control" type="text" name="author${author_count}" placeholder="Author"/><button class="btn btn-outline-danger" href="#" id="delete">Delete</button></div></div>`); //add input box
+            author_count++;
+        });
+
+        $(wrapper).on("click", "#delete", function(e) {
+            e.preventDefault();
+            $(this).parent('div').remove();
+            x--;
+        })
+    });
+</script>
+{% endblock %}
+
 {% block title %}
     Add Projects
 {% endblock %}
@@ -8,6 +33,16 @@
 <form action="/add" method="post">
     <div class="form-group">
         <input class="form-control" id="project_name" name="project_name" type="text" placeholder="Project Name">
+    </div>
+    <div class="form-group" id="container1">
+        <div class="form-group">
+            <div class="input-group">
+                <input class="form-control" type="text" name="author0" placeholder="Author">
+                <button class="btn btn-outline-secondary" id="add_form_field">Add Author
+                    <span style="font-size:16px; font-weight:bold;">+ </span>
+                </button>
+            </div>
+        </div>
     </div>
     <div class="form-group">
         <input class="form-control" id="url" name="url" type="text" placeholder="URL">
