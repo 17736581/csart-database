@@ -43,9 +43,9 @@ def search():
 	            (SELECT project_authors.project_id FROM project_authors 
 	            INNER JOIN authors ON authors.author_id = project_authors.author_id 
 	            INNER JOIN projects ON projects.project_id = project_authors.project_id 
-	            WHERE first_name = 'Ante' AND last_name = 'Prodan')
+	            WHERE first_name LIKE %s OR last_name LIKE %s)
                 GROUP BY projects.project_name"""
-        cursor.execute(query)
+        cursor.execute(query, ["%"+author.split()[0]+"%", "%"+author.split()[-1]+"%"])
         projects = cursor.fetchall()
         return render_template("search_results.html", projects=projects)
 
@@ -56,16 +56,40 @@ def add():
         return render_template("add.html")
     
     if request.method == "POST":
-        form_data = request.form.to_dict()
         cursor = mysql.connection.cursor()
-        print(form_data)
-        query = """INSERT INTO projects(project_name, url, start_date, end_date, release_date, country, funding_org, funding_amount) 
+        form_data = request.form.to_dict()
+        form_authors = {}
+        for i in form_data:
+            if i[0:6] == "author":
+                form_authors[i] = form_data[i]
+        
+        #Add authors to author table (if they don't already exist)
+        for i in form_authors:
+            full_name = form_authors[i].split()
+            author_query = cursor.execute("SELECT * FROM authors WHERE CONCAT(first_name, ' ', last_name) = %s %s %s", [full_name[0], ' ', full_name[1]])
+            if author_query == 0:
+                cursor.execute("""INSERT INTO authors(`first_name`, `last_name`) VALUES (%s, %s)""", [full_name[0], full_name[1]])
+
+        #Add project to projects table
+        project_query = """INSERT INTO projects(project_name, url, start_date, end_date, release_date, country, funding_org, funding_amount) 
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
         for k in form_data:
             if form_data[k] == '':
                 form_data[k] = None
-        print(form_data)
-        cursor.execute(query, [form_data["project_name"], form_data["url"], form_data["start_date"], form_data["end_date"], form_data["release_date"], form_data["country"], form_data["funding_org"], form_data["funding_amount"]])
+        cursor.execute(project_query, [form_data["project_name"], form_data["url"], form_data["start_date"], form_data["end_date"], form_data["release_date"], form_data["country"], form_data["funding_org"], form_data["funding_amount"]])
+
+        #Add author and project ids to project_authors associative table
+        #Get the project_id of the project using LAST_INSERT_ID()
+        #loop through all authors, getting their author_id and adding a new row to project_authors along with the project_id
+        cursor.execute("""SELECT LAST_INSERT_ID()""")
+        project_id = cursor.fetchone()['LAST_INSERT_ID()']
+        for i in form_authors:
+            full_name = form_authors[i].split()
+            cursor.execute("""SELECT author_id FROM authors WHERE CONCAT(first_name, ' ', last_name) = %s %s %s""", [full_name[0], ' ', full_name[1]])
+            author_id = cursor.fetchone()['author_id']
+            cursor.execute("""INSERT INTO project_authors VALUES (%s, %s)""", [project_id, author_id])
+
+
         mysql.connection.commit()
         return render_template("added.html", form_data=form_data)
 
