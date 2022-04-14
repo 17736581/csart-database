@@ -59,29 +59,6 @@ def add():
         cursor = mysql.connection.cursor()
         form_data = request.form.to_dict()
         
-        #retrieve all the authors in the form and put them in a new dictionary
-        #remember there is a variable number of authors per project
-        form_authors = {}
-        for i in form_data:
-            if i[0:6] == "author":
-                form_authors[i] = form_data[i]
-        
-        print(form_authors)
-        
-        author_keys = []
-        #Add authors to author table (if they don't already exist)
-        for i in form_authors:
-            cursor.execute("SELECT * FROM authors WHERE author_name = %s", [form_authors[i]])
-            author_fetch = cursor.fetchall()
-            if len(author_fetch) == 0:
-                cursor.execute("""INSERT INTO authors(`author_name`) VALUES (%s)""", [form_authors[i]])
-                cursor.execute("""SELECT LAST_INSERT_ID()""")
-                author_keys.append(cursor.fetchone()['LAST_INSERT_ID()'])
-            elif len(author_fetch) == 1:
-                author_keys.append(author_fetch[0]["author_name"])
-            else:
-                print("More than one author found")
-
         #Add project to projects table
         project_query = """INSERT INTO projects(project_name, url, start_date, end_date, release_date, country, funding_org, funding_amount) 
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
@@ -93,12 +70,38 @@ def add():
         cursor.execute("""SELECT LAST_INSERT_ID()""")
         project_id = cursor.fetchone()['LAST_INSERT_ID()']
 
+        #retrieve all the authors in the form and put them in a new dictionary
+        #remember there is a variable number of authors per project
+        form_authors = {}
+        for i in form_data:
+            if i[0:6] == "author":
+                form_authors[i] = form_data[i]
+        
+        #Add authors to author table (if they don't already exist)
+        #Also add new row to project_authors containing project_id and author_id for each author
+        for i in form_authors:
+            cursor.execute("SELECT * FROM authors WHERE author_name = %s", [form_authors[i]])
+            author_fetch = cursor.fetchall()
+            print(project_id)
+            print(author_fetch[0]['author_id'])
+            #if author not in database: add new author row, add new project_author row
+            if len(author_fetch) == 0:
+                cursor.execute("""INSERT INTO authors(`author_name`) VALUES (%s)""", [form_authors[i]])
+                cursor.execute("""SELECT LAST_INSERT_ID()""")
+                cursor.execute("""INSERT INTO project_authors VALUES (%s, %s)""", [project_id, cursor.fetchone()['LAST_INSERT_ID()']])
+            #if author in database: add new project_author row
+            elif len(author_fetch) == 1:
+                cursor.execute("""INSERT INTO project_authors VALUES (%s, %s)""", [project_id, author_fetch[0]["author_id"]])
+            else:
+                #TODO create redirect for errors
+                print("More than one author found")
+
         #Add author and project ids to project_authors associative table
         #loop through all authors, getting their author_id and adding a new row to project_authors along with the project_id
-        for i in form_authors:
-            cursor.execute("""SELECT author_id FROM authors WHERE author_name = %s""", [form_authors[i]])
-            author_id = cursor.fetchone()['author_id']
-            cursor.execute("""INSERT INTO project_authors VALUES (%s, %s)""", [project_id, author_id])
+#        for i in form_authors:
+ #           cursor.execute("""SELECT author_id FROM authors WHERE author_name = %s""", [form_authors[i]])
+  #          author_id = cursor.fetchone()['author_id']
+   #         cursor.execute("""INSERT INTO project_authors VALUES (%s, %s)""", [project_id, author_id])
 
 
 #       mysql.connection.commit()
