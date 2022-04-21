@@ -16,9 +16,10 @@
     <tbody>
         {% for row in authors %}
             <tr>
-                <td>{{ row["author_name"] }}</td>
+                <td id="author_name">{{ row["author_name"] }}</td>
         {% endfor %}
             </tr>
     </tbody>
 </table>
+
 {% endblock %}
