@@ -1,0 +1,53 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    {{ author_results[0]["author_name"] }}
+{% endblock %}
+
+{% block main %}
+<table class="table">
+    <thead>
+        <tr>
+            <th>Author Name</th>
+            <th>Other Names</th>
+            <th>Email</th>
+            <th>Website</th>
+            <th>Statement</th>
+            <th>Affiliations</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in author_results %}
+            <tr>
+                <td><a href="/authors/{{ row['author_id'] }}">{{ row["author_name"] }}</a></td>
+                <td>{{ row["other_name"] }}</td>
+                <td>{{ row["email"] }}</td>
+                <td>{{ row["website"] }}</td>
+                <td>{{ row["statement"] }}</td>
+                <td></td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<h3>Projects</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Project Name</th>
+            <th>Authors</th>
+            <th style="width: 12%">Release Date</th>
+            <th>URL</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for row in project_results %}
+        <tr>
+            <td>{{ row["project_name"] }}</td>
+            <td>{{ row["authors"] }}</td>
+            <td>{{ row["release_date"] }}</td>
+            <td>{{ row["url"] }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

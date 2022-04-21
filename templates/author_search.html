@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Author Search
+{% endblock %}
+
+{% block main %}
+<body>
+    <h3 class="d-flex justify-content-center">Author Search</h3>
+    <br>
+    <form action="/authors" method="post">
+        <div class="d-flex justify-content-center">
+            <div class="form-outline">
+                <input class="form-control" name="author_name" type="search" placeholder="Author Name">
+            </div>
+            <button class="btn btn-primary" type="submit">Search</button>
+        </div>
+    </form> 
+</body>
+
+{% endblock %}
