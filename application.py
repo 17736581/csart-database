@@ -4,6 +4,7 @@
 
 from flask import Flask, render_template, request, jsonify
 from flask_mysqldb import MySQL
+from helpers import null_to_string
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
@@ -34,7 +35,7 @@ def projects():
     if request.method == "POST":
         cursor = mysql.connection.cursor()
         author = request.form.get("author")
-        query = """SELECT projects.project_name, GROUP_CONCAT(CONCAT(' ', authors.author_name)) authors
+        query = """SELECT projects.project_name, GROUP_CONCAT(CONCAT(' ', authors.author_name)) authors, GROUP_CONCAT(CONCAT(' ', keywords.keyword_name)) keywords
                 FROM project_authors
                 INNER JOIN projects ON projects.project_id = project_authors.project_id
                 INNER JOIN authors ON authors.author_id = project_authors.author_id
@@ -63,6 +64,9 @@ def authors():
                 GROUP BY author_name"""
         cursor.execute(query, ["%"+author+"%"])
         author_results = cursor.fetchall()
+        print(type(author_results))
+        author_results = null_to_string(author_results)
+        print(author_results)
         return render_template("author_results.html", author_results=author_results)
     
 
@@ -121,7 +125,7 @@ def add():
         #Add authors to author table (if they don't already exist)
         #Also add new row to project_authors containing project_id and author_id for each author
         for i in form_authors:
-            cursor.execute("SELECT * FROM authors WHERE author_name = %s", [form_authors[i]])
+            cursor.execute("SELECT * FROM authors WHERE author_name = %s OR other_name = %s", [form_authors[i], form_authors[i]])
             author_fetch = cursor.fetchall()
             #if author not in database: add new author row, add new project_author row
             if len(author_fetch) == 0:
