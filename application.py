@@ -35,7 +35,7 @@ def projects():
     if request.method == "POST":
         cursor = mysql.connection.cursor()
         author = request.form.get("author")
-        query = """SELECT projects.project_name, GROUP_CONCAT(CONCAT(' ', authors.author_name)) authors, GROUP_CONCAT(CONCAT(' ', keywords.keyword_name)) keywords
+        query = """SELECT projects.project_id, projects.project_name, GROUP_CONCAT(CONCAT(' ', authors.author_name)) authors
                 FROM project_authors
                 INNER JOIN projects ON projects.project_id = project_authors.project_id
                 INNER JOIN authors ON authors.author_id = project_authors.author_id
@@ -48,6 +48,16 @@ def projects():
         cursor.execute(query, ["%"+author+"%"])
         projects = cursor.fetchall()
         return render_template("project_results.html", projects=projects)
+
+@app.route("/projects/<id>")
+def projects_id(id):
+    cursor = mysql.connection.cursor()
+    query = """SELECT * FROM projects
+            WHERE projects.project_id = %s"""
+    cursor.execute(query, [id])
+    project_results = cursor.fetchone()
+    return render_template("project_profile.html", project_results=project_results)
+
 
 # route to search authors
 @app.route("/authors", methods=["GET", "POST"])

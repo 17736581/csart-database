@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    {{ project_results["project_name"] }}
+{% endblock %}
+
+{% block main %}
+{{ project_results["project_name"] }}
+{{ project_results["url"] }}
+{{ project_results["release_date"] }}
+
+<table>
+    <thead>
+        <th>Authors</th>
+        <th>Keywords</th>
+    </thead>
+</table>
+
+{% endblock %}
