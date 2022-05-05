@@ -1,0 +1,72 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+    $(document).ready(function() {
+        var othername_count = 1;
+        var wrapper = $("#container1");
+        var add_button = $("#add_form_field");
+
+        var x = 1;
+        $(add_button).click(function(e) {
+            e.preventDefault();
+            x++;
+            $(wrapper).append(`<div class="form-group"><div class="input-group"><input class="form-control" type="text" name="new${othername_count}" placeholder="Other Name"/><button class="btn btn-outline-danger" href="#" id="delete">Delete</button></div></div>`); //add input box
+            othername_count++;
+        });
+
+        $(wrapper).on("click", "#delete", function(e) {
+            e.preventDefault();
+            $(this).parent('div').remove();
+            x--;
+        })
+    });
+</script>
+{% endblock %}
+
+{% block title %}
+    {{ author_results["author_name"] }}: Edit
+{% endblock %}
+
+{% block main %}
+<form action="/authors/{{ author_results['author_id'] }}/edit" method="post">
+    <div class="form-group">
+        <label for="author_name">Author Name</label>
+        <input class="form-control" name="author_name" type="text" value="{{ author_results['author_name'] }}">
+    </div>
+    <div class="form-group" id="container1">
+        <div class="form-group">
+            <label for="other_name0">Other Name(s)</label>
+            <button class="btn btn-outline-secondary" id="add_form_field">Add Other Name
+                <span style="font-size:16px; font-weight:bold;">+ </span>
+            </button>
+        </div>
+        {% for row in othernames_results %}
+        <div class="form-group">
+            <input class="form-control" name="old{{ row['other_name_id'] }}" type="text" value="{{ row['other_name'] }}">
+        </div>
+        {% endfor %}
+    </div>
+    <div class="form-group">
+        <label for="email">Email</label>
+        <input class="form-control" name="email" type="email" value="{{ author_results['email'] }}">
+    </div>
+    <div class="form-group">
+        <label for="website">Website</label>
+        <input class="form-control" name="website" type="text" value="{{ author_results['website'] }}">
+    </div>
+    <div class="form-group">
+        <label for="affiliations">Affiliations</label>
+        <textarea class="form-control" name="affiliations" cols="30" rows="5" placeholder="Organisation 1, Organisation 2, etc.">{{ author_results['affiliations'] }}</textarea>
+    </div>
+    <div class="form-group">
+        <label for="statement">Statement</label>
+        <textarea class="form-control" name="statement" cols="30" rows="5">{{ author_results['statement'] }}</textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+
+
+
+{% endblock %}

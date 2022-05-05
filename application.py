@@ -4,7 +4,7 @@
 
 from flask import Flask, render_template, request, jsonify
 from flask_mysqldb import MySQL
-from helpers import null_to_string
+from helpers import null_to_string, string_to_null
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
@@ -74,22 +74,20 @@ def authors():
                 GROUP BY author_name"""
         cursor.execute(query, ["%"+author+"%"])
         author_results = cursor.fetchall()
-        print(type(author_results))
         author_results = null_to_string(author_results)
-        print(author_results)
         return render_template("author_results.html", author_results=author_results)
     
-
+#author profile page by id
 @app.route("/authors/<id>/")
-def users(id):
+def author_profile(id):
     cursor = mysql.connection.cursor()
-    auth_query = """SELECT * FROM authors 
+    author_query = """SELECT * FROM authors 
                LEFT JOIN other_names ON other_names.author_id = authors.author_id
                WHERE authors.author_id = %s"""
-    cursor.execute(auth_query, [id])
+    cursor.execute(author_query, [id])
     author_results = cursor.fetchall()
 
-    proj_query = """ SELECT *, GROUP_CONCAT(CONCAT(' ', authors.author_name)) authors
+    project_query = """ SELECT *, GROUP_CONCAT(CONCAT(' ', authors.author_name)) authors
                 FROM project_authors
                 INNER JOIN projects ON projects.project_id = project_authors.project_id
                 INNER JOIN authors ON authors.author_id = project_authors.author_id
@@ -99,10 +97,73 @@ def users(id):
 	            INNER JOIN projects ON projects.project_id = project_authors.project_id 
 	            WHERE authors.author_id = %s)
                 GROUP BY projects.release_date DESC"""
-    cursor.execute(proj_query, [id])
+    cursor.execute(project_query, [id])
     project_results = cursor.fetchall()
     return render_template("author_profile.html", author_results=author_results, project_results=project_results)
 
+#route to edit author information
+@app.route("/authors/<id>/edit", methods=["GET", "POST"])
+def author_edit(id):
+    #first query the author data
+    cursor = mysql.connection.cursor()
+    author_query = """SELECT * FROM authors 
+               LEFT JOIN other_names ON other_names.author_id = authors.author_id
+               WHERE authors.author_id = %s"""
+    cursor.execute(author_query, [id])
+    author_results = cursor.fetchone()
+    author_results = null_to_string(author_results)
+
+    #then query author's other names
+    othernames_query = """SELECT other_name_id, other_name FROM other_names
+                        INNER JOIN authors ON authors.author_id = other_names.author_id
+                        WHERE authors.author_id = %s"""
+    cursor.execute(othernames_query, [id])
+    othernames_results = cursor.fetchall()
+
+    if request.method == "GET":
+        return render_template("author_edit.html", author_results=author_results, othernames_results = othernames_results)
+    
+    if request.method == "POST":
+        cursor = mysql.connection.cursor()
+        #processing the updated author data comes in three parts:
+        #updating author table, updating existing other_names, adding new other_names
+        form_data = request.form.to_dict()
+        form_data = string_to_null(form_data)
+
+        #update author table
+        author_query = """UPDATE authors
+                        SET author_name = %s,
+                        email = %s,
+                        website = %s,
+                        affiliations = %s,
+                        statement = %s
+                        WHERE author_id = %s"""
+        cursor.execute(author_query, [form_data['author_name'], form_data['email'], form_data['website'], form_data['affiliations'], form_data['statement'], id])
+        author_results = cursor.fetchall()
+        print(author_results)
+        #mysql.connection.commit()
+
+        #update existing other names
+        othername_data = {}
+        #put other names into separate dictionary with keys corresponding to database id
+        for key in form_data:
+            if key[0:3] == "old":
+                othername_data[int(''.join(filter(str.isdigit, key)))] = form_data[key]
+        print(othername_data)
+        othername_query = """UPDATE other_names
+                            SET other_name = %s 
+                            WHERE other_name_id = %s"""
+        for key in othername_data:
+            cursor.execute(othername_query, [othername_data[key], key])
+        
+        
+        #get the new other names in a list
+        #loop through the list to check if the other name exists 
+        #join authors and othernames, check othername and author_id
+        #if other_name not exist, add other_name entry, add author_other_names entry
+        #similar to adding projects and project_authors
+
+        return form_data
 
 # route to add projects
 @app.route("/add", methods=["GET", "POST"])
