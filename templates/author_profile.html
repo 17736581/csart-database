@@ -20,7 +20,7 @@
         {% for row in author_results %}
             <tr>
                 <td><a href="/authors/{{ row['author_id'] }}">{{ row["author_name"] }}</a></td>
-                <td>{{ row["other_name"] }}</td>
+                <td>{{ row["other_names"] }}</td>
                 <td>{{ row["email"] }}</td>
                 <td>{{ row["website"] }}</td>
                 <td>{{ row["statement"] }}</td>

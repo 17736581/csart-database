@@ -5,6 +5,7 @@
 from flask import Flask, render_template, request, jsonify
 from flask_mysqldb import MySQL
 from helpers import null_to_string, string_to_null
+import csv
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
@@ -15,6 +16,8 @@ app.config["MYSQL_USER"] = "root"
 app.config["MYSQL_PASSWORD"] = ""
 app.config["MYSQL_DB"] = "csart_db"
 app.config["MYSQL_CURSORCLASS"] = "DictCursor"
+app.config["JSON_AS_ASCII"] = False
+app.config['JSON_SORT_KEYS'] = False
 
 mysql = MySQL(app)
 
@@ -68,20 +71,22 @@ def authors():
     if request.method == "POST":
         cursor = mysql.connection.cursor()
         author = request.form.get("author_name")
-        query = """SELECT * FROM authors 
+        query = """SELECT authors.author_id, author_name, website, affiliations, GROUP_CONCAT(CONCAT('\n', other_names.other_name)) other_name FROM authors 
                 LEFT JOIN other_names ON other_names.author_id = authors.author_id
                 WHERE author_name LIKE %s
                 GROUP BY author_name"""
         cursor.execute(query, ["%"+author+"%"])
         author_results = cursor.fetchall()
         author_results = null_to_string(author_results)
+
+
         return render_template("author_results.html", author_results=author_results)
     
 #author profile page by id
 @app.route("/authors/<id>/")
 def author_profile(id):
     cursor = mysql.connection.cursor()
-    author_query = """SELECT * FROM authors 
+    author_query = """SELECT *, GROUP_CONCAT(CONCAT('\n', other_names.other_name)) other_names FROM authors 
                LEFT JOIN other_names ON other_names.author_id = authors.author_id
                WHERE authors.author_id = %s"""
     cursor.execute(author_query, [id])
@@ -141,7 +146,7 @@ def author_edit(id):
         cursor.execute(author_query, [form_data['author_name'], form_data['email'], form_data['website'], form_data['affiliations'], form_data['statement'], id])
         author_results = cursor.fetchall()
         print(author_results)
-        #mysql.connection.commit()
+        mysql.connection.commit()
 
         #update existing other names
         othername_data = {}
@@ -196,7 +201,9 @@ def add():
         #Add authors to author table (if they don't already exist)
         #Also add new row to project_authors containing project_id and author_id for each author
         for i in form_authors:
-            cursor.execute("SELECT * FROM authors WHERE author_name = %s OR other_name = %s", [form_authors[i], form_authors[i]])
+            cursor.execute("""SELECT * FROM authors 
+                            LEFT JOIN other_names on other_names.author_id = authors.author_id
+                            WHERE author_name = %s OR other_name = %s""", [form_authors[i], form_authors[i]])
             author_fetch = cursor.fetchall()
             #if author not in database: add new author row, add new project_author row
             if len(author_fetch) == 0:
@@ -204,7 +211,7 @@ def add():
                 cursor.execute("""SELECT LAST_INSERT_ID()""")
                 cursor.execute("""INSERT INTO project_authors VALUES (%s, %s)""", [project_id, cursor.fetchone()['LAST_INSERT_ID()']])
             #if author in database: add new project_author row
-            elif len(author_fetch) == 1:
+            elif len(author_fetch) >= 1:
                 cursor.execute("""INSERT INTO project_authors VALUES (%s, %s)""", [project_id, author_fetch[0]["author_id"]])
             else:
                 #TODO create redirect for errors
@@ -217,4 +224,46 @@ def add():
 
 # @app.route('/_autocomplete')
 # def autocomplete():
-    
+
+@app.route("/network")
+def network():
+    cursor = mysql.connection.cursor()
+    cursor.execute("""SELECT author_name as id, 1 as 'group' from authors""")
+    nodes = cursor.fetchall()
+    cursor.execute("""Select x.author_name as 'source',
+                        y.author_name as 'target',
+                        count(pa.project_id) as value
+                    From project_authors pa
+                    Inner join project_authors pb
+                    On pa.project_id = pb.project_id
+                    Inner join authors x on x.author_id = pa.author_id
+                    Inner join authors y on y.author_id = pb.author_id
+                    WHERE pa.author_id < pb.author_id
+                    Group by pa.author_id,pb.author_id;""")
+    links = cursor.fetchall()
+    return jsonify(nodes=nodes, links=links)
+
+@app.route("/network/<id>")
+def network_author(id):
+    cursor = mysql.connection.cursor()
+    cursor.execute("""Select y.author_name as 'target', 1 as 'group'
+                    From project_authors pa
+                    Inner join project_authors pb
+                    On pa.project_id = pb.project_id
+                    Inner join authors x on x.author_id = pa.author_id
+                    Inner join authors y on y.author_id = pb.author_id
+                    WHERE pa.author_id = %s
+                    Group by pa.author_id,pb.author_id;""", [id])
+    nodes = cursor.fetchall()
+    cursor.execute("""Select x.author_name as 'source',
+                        y.author_name as 'target',
+                        count(pa.project_id) as value
+                    From project_authors pa
+                    Inner join project_authors pb
+                    On pa.project_id = pb.project_id
+                    Inner join authors x on x.author_id = pa.author_id
+                    Inner join authors y on y.author_id = pb.author_id
+                    WHERE pa.author_id < pb.author_id AND pa.author_id = %s
+                    Group by pa.author_id,pb.author_id;""", [id])
+    links = cursor.fetchall()
+    return jsonify(nodes=nodes, links=links)
