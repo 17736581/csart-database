@@ -2,10 +2,11 @@
 #$env:FLASK_APP = "application"
 #$env:FLASK_ENV = "development"
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session, redirect
 from flask_mysqldb import MySQL
-from helpers import null_to_string, string_to_null
-import csv
+from werkzeug.security import check_password_hash, generate_password_hash
+from helpers import login_required, null_to_string, string_to_null
+import csv, os
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
@@ -19,18 +20,86 @@ app.config["MYSQL_CURSORCLASS"] = "DictCursor"
 app.config["JSON_AS_ASCII"] = False
 app.config['JSON_SORT_KEYS'] = False
 
+#Set the secret key
+app.secret_key = os.urandom(16)
+
 mysql = MySQL(app)
 
 # home page
 @app.route("/")
+@login_required
 def hello_world():
     cursor = mysql.connection.cursor()
     cursor.execute("""SELECT * FROM Authors""")
     authors = cursor.fetchall()
     return render_template("index.html", authors=authors)
 
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    cursor = mysql.connection.cursor()
+
+    if request.method == "POST":
+        name = request.form.get("username")
+        password = request.form.get("password")
+        confirmation = request.form.get("confirmation")
+
+        if not name:
+            return "must provide username"
+        
+        cursor.execute("SELECT * FROM users WHERE username = %s", [name])
+        if len(cursor.fetchall()) != 0:
+            return "username taken"
+
+        if password != confirmation or password == "" or confirmation == "":
+            return "please re-enter password"
+        
+        hashed = generate_password_hash(password)
+
+        cursor.execute("INSERT INTO users (username, hash) VALUES (%s, %s)", [name, hashed])
+        mysql.connection.commit()
+        return render_template("login.html")
+    
+    else:
+        return render_template("register.html")
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    cursor = mysql.connection.cursor()
+
+    #forget any userid
+    session.clear()
+
+    if request.method == "POST":
+
+        if not request.form.get("username"):
+            return "must provide username"
+        
+        elif not request.form.get("password"):
+            return "must provide password"
+
+        cursor.execute("SELECT * FROM users WHERE username = %s", [request.form.get("username")])
+
+        rows = cursor.fetchall()
+
+        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
+            return "invalid username and/or password"
+        
+        session["user_id"] = rows[0]["user_id"]
+
+        return redirect("/")
+    
+    else:
+        return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    session.clear()
+
+    return redirect("/login")
+
 # route to search projects
 @app.route("/projects", methods=["GET", "POST"])
+@login_required
 def projects():
     if request.method == "GET":
         return render_template("project_search.html")
@@ -53,6 +122,7 @@ def projects():
         return render_template("project_results.html", projects=projects)
 
 @app.route("/projects/<id>")
+@login_required
 def projects_id(id):
     cursor = mysql.connection.cursor()
     query = """SELECT * FROM projects
@@ -64,6 +134,7 @@ def projects_id(id):
 
 # route to search authors
 @app.route("/authors", methods=["GET", "POST"])
+@login_required
 def authors():
     if request.method == "GET":
         return render_template("author_search.html")
@@ -84,6 +155,7 @@ def authors():
     
 #author profile page by id
 @app.route("/authors/<id>/")
+@login_required
 def author_profile(id):
     cursor = mysql.connection.cursor()
     author_query = """SELECT *, GROUP_CONCAT(CONCAT('\n', other_names.other_name)) other_names FROM authors 
@@ -108,6 +180,7 @@ def author_profile(id):
 
 #route to edit author information
 @app.route("/authors/<id>/edit", methods=["GET", "POST"])
+@login_required
 def author_edit(id):
     #first query the author data
     cursor = mysql.connection.cursor()
@@ -172,6 +245,7 @@ def author_edit(id):
 
 # route to add projects
 @app.route("/add", methods=["GET", "POST"])
+@login_required
 def add():
     if request.method == "GET":
         return render_template("add.html")
