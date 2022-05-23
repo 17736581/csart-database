@@ -1,0 +1,94 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<script>
+    $(document).ready(function() {
+        var author_count = 1;
+        var wrapper = $("#container1");
+        var add_button = $("#add_form_field");
+
+        var x = 1;
+        $(add_button).click(function(e) {
+            e.preventDefault();
+            x++;
+            $(wrapper).append(`<div class="form-group">
+                                    <div class="input-group">
+                                        <input class="form-control" type="text" name="author${author_count}" list="author_list" placeholder="Author"/>
+                                        <button class="btn btn-outline-danger" id="delete">Delete</button>
+                                    </div>
+                                </div>`); //add input box
+            author_count++;
+        });
+
+        $(wrapper).on("click", "#delete", function(e) {
+            e.preventDefault();
+            $(this).parent('div').remove();
+            x--;
+        })
+    });
+</script>
+{% endblock %}
+
+{% block title %}
+    {{ project_results["project_name"] }} - Edit
+{% endblock %}
+
+{% block main %}
+<form method="post">
+    <div class="form-group">
+        <input class="form-control" id="project_name" name="project_name" type="text" placeholder="Project Name" value="{{ project_results['project_name'] }}" required>
+    </div>
+    <div class="form-group" id="container1">
+        <!-- loop through exisiting authors -->
+        {% for author in author_results %}
+            <div class="form-group">
+                <div class="input-group">
+                    <input class="form-control" type="text" name="old_author{{ author['author_id'] }}" list="author_list" placeholder="Author" value="{{ author['author_name'] }}" required>
+                    <button class="btn btn-outline-danger" href="#" id="delete">Delete</button>
+                </div>
+            </div>
+        {% endfor %}
+        <!-- new authors -->
+        <div class="form-group">
+            <div class="input-group">
+                <input class="form-control" type="text" name="author0" list="author_list" placeholder="Author">
+                <datalist id="author_list">
+                    {% for listed_author in author_list %}
+                        <option value="{{ listed_author['author_name'] }}">{{ listed_author['author_name'] }}</option>
+                    {% endfor %}
+                </datalist>
+                <button class="btn btn-outline-secondary" id="add_form_field">Add Author
+                    <span style="font-size:16px; font-weight:bold;">+ </span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <input class="form-control" id="url" name="url" type="text" placeholder="URL" value="{{ project_results['url'] }}" required>
+    </div>
+    <div class="form-group">
+        <label for="start_date">Start Date</label>
+        <input class="form-control" id="start_date" name="start_date" type="date" title="Start Date" value="{{ project_results['start_date'] }}">
+    </div>
+    <div class="form-group">
+        <label for="end_date">End Date</label>
+        <input class="form-control" id="end_date" name="end_date" type="date" placeholder="End Date" value="{{ project_results['end_date'] }}">
+    </div>
+    
+    <div class="form-group">
+        <label for="release_date">Release Date</label>
+        <input class="form-control" id="release_date" name="release_date" type="date" placeholder="Release Date" value="{{ project_results['release_date'] }}">
+    </div>
+    <div class="form-group">
+        <input class="form-control" id="country" name="country" type="text" placeholder="Country" value="{{ project_results['country'] }}">
+    </div>
+    <div class="form-group">
+        <input class="form-control" id="funding_org" name="funding_org" type="text" placeholder="Funding Source" value="{{ project_results['funding_source'] }}">
+    </div>
+    <div class="form-group">
+        <input class="form-control" id="funding_amount" name="funding_amount" type="number" placeholder="Funding Amount" value="{{ project_results['funding_amount'] }}">
+    </div>
+    <button type="submit" class="btn btn-primary" formaction="/projects/{{ project_results['project_id'] }}/edit">Submit</button>
+    <a href="/projects/{{ project_results['project_id'] }}"><button class="btn btn-secondary" formaction="/projects/{{ project_results['project_id'] }}" formmethod="get" formnovalidate>Cancel</button></a>
+</form>
+{% endblock %}
