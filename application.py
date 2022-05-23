@@ -160,7 +160,8 @@ def author_profile(id):
                LEFT JOIN other_names ON other_names.author_id = authors.author_id
                WHERE authors.author_id = %s"""
     cursor.execute(author_query, [id])
-    author_results = cursor.fetchall()
+    author_results = cursor.fetchone()
+    author_results = null_to_string(author_results)
 
     project_query = """ SELECT *, GROUP_CONCAT(CONCAT(' ', authors.author_name)) authors
                 FROM project_authors
