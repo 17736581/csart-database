@@ -34,3 +34,9 @@ main .user-form
 .mt-2 {
     margin-top: 0.1rem!important;
 }
+
+.author-container div {
+    text-align: left!important;
+    width: 65%;
+    margin-bottom: 1em;
+}

@@ -123,11 +123,20 @@ def projects():
 @login_required
 def projects_id(id):
     cursor = mysql.connection.cursor()
-    query = """SELECT * FROM projects
+    project_query = """SELECT * FROM projects
             WHERE projects.project_id = %s"""
-    cursor.execute(query, [id])
+    cursor.execute(project_query, [id])
     project_results = cursor.fetchone()
-    return render_template("project_profile.html", project_results=project_results)
+    project_results = null_to_string(project_results)
+
+    author_query = """SELECT author_name, authors.author_id FROM project_authors
+                    INNER JOIN projects ON projects.project_id = project_authors.project_id
+                    INNER JOIN authors ON authors.author_id = project_authors.author_id
+                    WHERE projects.project_id = %s"""
+
+    cursor.execute(author_query, [id])
+    author_results = cursor.fetchall()
+    return render_template("project_profile.html", project_results=project_results, author_results=author_results)
 
 
 # route to search authors
