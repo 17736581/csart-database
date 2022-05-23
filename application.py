@@ -114,7 +114,7 @@ def projects():
                 WHERE project_authors.project_id IN
 	            (SELECT project_authors.project_id FROM project_authors)
                 AND projects.project_name LIKE %s
-                GROUP BY projects.project_name"""
+                GROUP BY projects.project_id"""
         cursor.execute(query, ["%"+project_name+"%"])
         projects = cursor.fetchall()
         return render_template("project_results.html", projects=projects)
@@ -138,6 +138,101 @@ def projects_id(id):
     author_results = cursor.fetchall()
     return render_template("project_profile.html", project_results=project_results, author_results=author_results)
 
+@app.route("/projects/<id>/edit", methods=["GET", "POST"])
+# @login_required
+def projects_edit(id):
+    cursor = mysql.connection.cursor()
+    if request.method == "GET":
+        #Query project data
+        project_query = """SELECT * FROM projects
+                        WHERE project_id = %s"""
+        cursor.execute(project_query, [id])
+        project_results = cursor.fetchone()
+        project_results = null_to_string(project_results)
+        
+        #Query project's authors
+        author_query = """SELECT author_name, authors.author_id FROM project_authors
+                        INNER JOIN projects ON projects.project_id = project_authors.project_id
+                        INNER JOIN authors ON authors.author_id = project_authors.author_id
+                        WHERE projects.project_id = %s"""
+        cursor.execute(author_query, [id])
+        author_results = cursor.fetchall()
+
+        #Query all authors for author datalist
+        cursor.execute("SELECT author_name FROM authors")
+        author_list = cursor.fetchall()
+        return render_template("project_edit.html", project_results=project_results, author_results=author_results, author_list=author_list)
+    
+    if request.method == "POST":
+        form_data = request.form.to_dict()
+        form_data = string_to_null(form_data)
+
+        #Update projects table
+        project_query = """UPDATE projects
+                            SET project_name = %s,
+                                url = %s,
+                                start_date = %s,
+                                end_date = %s,
+                                release_date = %s,
+                                country = %s,
+                                funding_org = %s,
+                                funding_amount = %s
+                            WHERE project_id = %s"""
+        cursor.execute(project_query, [form_data['project_name'], form_data['url'], form_data['start_date'], form_data['end_date'], form_data['release_date'],
+                                     form_data['country'], form_data['funding_org'], form_data['funding_amount'], id])
+        
+
+        #ALTERNATIVE: DELETE ALL PROJECT_AUTHORS ENTRIES, THEN ADD THEM BASED ON THE EDIT
+        cursor.execute("DELETE FROM project_authors WHERE project_id = %s", [id])
+        mysql.connection.commit()
+        
+        # #Retrieve all authors in the form
+        form_authors = {}
+        for i in form_data:
+            if "author" in i and i != None:
+                form_authors[i] = form_data[i]
+        
+        #Re-add authors to project_authors
+        #Add new authors if they don't exist
+        for i in form_authors:
+            cursor.execute("""SELECT * FROM authors 
+                            LEFT JOIN other_names on other_names.author_id = authors.author_id
+                            WHERE author_name = %s OR other_name = %s""", [form_authors[i], form_authors[i]])
+            author_fetch = cursor.fetchall()
+            #if author not in database: add new author row, add new project_author row
+            if len(author_fetch) == 0:
+                cursor.execute("""INSERT INTO authors(`author_name`) VALUES (%s)""", [form_authors[i]])
+                cursor.execute("""SELECT LAST_INSERT_ID()""")
+                cursor.execute("""INSERT INTO project_authors VALUES (%s, %s)""", [id, cursor.fetchone()['LAST_INSERT_ID()']])
+            #if author in database: add new project_author row
+            elif len(author_fetch) >= 1:
+                cursor.execute("""INSERT INTO project_authors VALUES (%s, %s)""", [id, author_fetch[0]["author_id"]])
+            else:
+                #TODO create redirect for errors
+                print("More than one author found")
+
+        #OLD CODE:
+
+        #Query database for current list of authors and id's > store in variable
+        # cursor.execute("SELECT author_id, author_name FROM authors")
+        # author_dict = {}
+        # for i in cursor.fetchall():
+        #     author_dict[i['author_id']] = i['author_name']      
+        
+        # for i in form_authors:
+        #     if form_authors[i] in author_dict.values():
+        #         print(f"adding {form_authors[i]} with the id of {i} to the project_authors table for project id {id}")
+        #         print(f"{id} == {int(''.join(filter(str.isdigit, i)))}")
+        #         cursor.execute("INSERT INTO project_authors VALUES (%s, %s)", [id, int(''.join(filter(str.isdigit, i)))])
+        #     else:
+        #         print(f"creating new author entry for {form_authors[i]} who appears to be a new author with id {i}")
+        #         cursor.execute("""INSERT INTO authors(`author_name`) VALUES (%s)""", [form_authors[i]])
+        #         cursor.execute("""SELECT LAST_INSERT_ID()""")
+        #         cursor.execute("""INSERT INTO project_authors VALUES (%s, %s)""", [id, cursor.fetchone()['LAST_INSERT_ID()']])
+
+        mysql.connection.commit()
+        return form_data
+        
 
 # route to search authors
 @app.route("/authors", methods=["GET", "POST"])
@@ -190,23 +285,23 @@ def author_profile(id):
 @app.route("/authors/<id>/edit", methods=["GET", "POST"])
 @login_required
 def author_edit(id):
-    #first query the author data
-    cursor = mysql.connection.cursor()
-    author_query = """SELECT * FROM authors 
-               LEFT JOIN other_names ON other_names.author_id = authors.author_id
-               WHERE authors.author_id = %s"""
-    cursor.execute(author_query, [id])
-    author_results = cursor.fetchone()
-    author_results = null_to_string(author_results)
-
-    #then query author's other names
-    othernames_query = """SELECT other_name_id, other_name FROM other_names
-                        INNER JOIN authors ON authors.author_id = other_names.author_id
-                        WHERE authors.author_id = %s"""
-    cursor.execute(othernames_query, [id])
-    othernames_results = cursor.fetchall()
-
     if request.method == "GET":
+        #first query the author data
+        cursor = mysql.connection.cursor()
+        author_query = """SELECT * FROM authors 
+                LEFT JOIN other_names ON other_names.author_id = authors.author_id
+                WHERE authors.author_id = %s"""
+        cursor.execute(author_query, [id])
+        author_results = cursor.fetchone()
+        author_results = null_to_string(author_results)
+
+        #then query author's other names
+        othernames_query = """SELECT other_name_id, other_name FROM other_names
+                            INNER JOIN authors ON authors.author_id = other_names.author_id
+                            WHERE authors.author_id = %s"""
+        cursor.execute(othernames_query, [id])
+        othernames_results = cursor.fetchall()
+
         return render_template("author_edit.html", author_results=author_results, othernames_results = othernames_results)
     
     if request.method == "POST":
@@ -226,8 +321,6 @@ def author_edit(id):
                         WHERE author_id = %s"""
         cursor.execute(author_query, [form_data['author_name'], form_data['email'], form_data['website'], form_data['affiliations'], form_data['statement'], id])
         author_results = cursor.fetchall()
-        print(author_results)
-        mysql.connection.commit()
 
         #update existing other names
         othername_data = {}
@@ -235,21 +328,20 @@ def author_edit(id):
         for key in form_data:
             if key[0:3] == "old":
                 othername_data[int(''.join(filter(str.isdigit, key)))] = form_data[key]
-        print(othername_data)
         othername_query = """UPDATE other_names
                             SET other_name = %s 
                             WHERE other_name_id = %s"""
         for key in othername_data:
             cursor.execute(othername_query, [othername_data[key], key])
         
-        
+        #!IMPORTANT
         #get the new other names in a list
         #loop through the list to check if the other name exists 
         #join authors and othernames, check othername and author_id
         #if other_name not exist, add other_name entry, add author_other_names entry
         #similar to adding projects and project_authors
-
-        return form_data
+        mysql.connection.commit()
+        return form_data #???
 
 # route to add projects
 @app.route("/add", methods=["GET", "POST"])
@@ -303,7 +395,7 @@ def add():
                 print("More than one author found")
 
         mysql.connection.commit()
-        return render_template("added.html", form_data=form_data)
+        return redirect("/projects/" + str(project_id))
 
 # NAMES=["abc","abcd","abcde","abcdef"]
 
