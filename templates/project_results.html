@@ -9,15 +9,15 @@
     <table class="table">
         <thead>
             <tr>
-                <th>Author</th>
-                <th>Title</th>
+                <th style="width: 50%;">Title</th>
+                <th>Authors</th>
             </tr>
         </thead>
         <tbody>
             {% for row in projects %}
                 <tr>
-                    <td>{{ row["authors"] }}</td>
                     <td><a href="/projects/{{ row['project_id'] }}">{{ row["project_name"] }}</a></td>
+                    <td>{{ row["authors"] }}</td>
                 </tr>
             {% endfor %}
         </tbody>

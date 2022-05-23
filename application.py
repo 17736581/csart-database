@@ -106,18 +106,16 @@ def projects():
     
     if request.method == "POST":
         cursor = mysql.connection.cursor()
-        author = request.form.get("author")
+        project_name = request.form.get("project_name")
         query = """SELECT projects.project_id, projects.project_name, GROUP_CONCAT(CONCAT(' ', authors.author_name)) authors
                 FROM project_authors
                 INNER JOIN projects ON projects.project_id = project_authors.project_id
                 INNER JOIN authors ON authors.author_id = project_authors.author_id
                 WHERE project_authors.project_id IN
-	            (SELECT project_authors.project_id FROM project_authors 
-	            INNER JOIN authors ON authors.author_id = project_authors.author_id 
-	            INNER JOIN projects ON projects.project_id = project_authors.project_id 
-	            WHERE author_name LIKE %s)
+	            (SELECT project_authors.project_id FROM project_authors)
+                AND projects.project_name LIKE %s
                 GROUP BY projects.project_name"""
-        cursor.execute(query, ["%"+author+"%"])
+        cursor.execute(query, ["%"+project_name+"%"])
         projects = cursor.fetchall()
         return render_template("project_results.html", projects=projects)
 
@@ -248,7 +246,10 @@ def author_edit(id):
 @login_required
 def add():
     if request.method == "GET":
-        return render_template("add.html")
+        cursor = mysql.connection.cursor()
+        cursor.execute("""SELECT author_name FROM authors""")
+        authors = cursor.fetchall()
+        return render_template("add.html", authors=authors)
     
     if request.method == "POST":
         cursor = mysql.connection.cursor()
