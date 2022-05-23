@@ -6,22 +6,21 @@
 
 <!--Placeholder body, add landing page later-->
 {% block main %}
-<h2>Authors</h2>
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in authors %}
-            <tr>
-                <td id="author_name">{{ row["author_name"] }}</td>
-        {% endfor %}
-            </tr>
-    </tbody>
-</table>
+<div class="container">
+    <h2>CSART Database</h2>
+    <p class="lead text-muted">
+        Website for CSART Database entry, retrieval and modification.
+    </p>
+    <br>
+    <p>
+        <a href="/projects"><button class="btn btn-secondary btn-lg">Project Search</button></a>
+        <a href="/authors"><button class="btn btn-secondary btn-lg">Author Search</button></a>
+    </p>
+    <br>
+    <p>
+        <a href="/add"><button class="btn btn-primary btn-lg">Add a Project</button></a>
+    </p>
+</div>
 
-<a href="/register">Register</a>
 
 {% endblock %}
