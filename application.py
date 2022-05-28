@@ -2,6 +2,7 @@
 #$env:FLASK_APP = "application"
 #$env:FLASK_ENV = "development"
 
+from ast import keyword
 from flask import Flask, render_template, request, jsonify, session, redirect
 from flask_mysqldb import MySQL
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -19,6 +20,7 @@ app.config["MYSQL_DB"] = "csart_db"
 app.config["MYSQL_CURSORCLASS"] = "DictCursor"
 app.config["JSON_AS_ASCII"] = False
 app.config['JSON_SORT_KEYS'] = False
+app.url_map.strict_slashes = False
 
 #Set the secret key
 app.secret_key = os.urandom(16)
@@ -136,7 +138,15 @@ def projects_id(id):
 
     cursor.execute(author_query, [id])
     author_results = cursor.fetchall()
-    return render_template("project_profile.html", project_results=project_results, author_results=author_results)
+
+    keyword_query = """SELECT keyword_name FROM project_keywords 
+                    INNER JOIN projects on projects.project_id = project_keywords.project_id 
+                    INNER JOIN keywords on keywords.keyword_id = project_keywords.keyword_id
+                    WHERE projects.project_id = %s;"""
+    cursor.execute(keyword_query, [id])
+    keyword_results = cursor.fetchall()
+
+    return render_template("project_profile.html", project_results=project_results, author_results=author_results, keyword_results=keyword_results)
 
 @app.route("/projects/<id>/edit", methods=["GET", "POST"])
 # @login_required
@@ -181,31 +191,32 @@ def projects_edit(id):
         cursor.execute(project_query, [form_data['project_name'], form_data['url'], form_data['start_date'], form_data['end_date'], form_data['release_date'],
                                      form_data['country'], form_data['funding_org'], form_data['funding_amount'], id])
         
-
+        # #Retrieve all authors in the form
+        #Use a set to only get unique authors (no duplicates)
+        form_authors = set()
+        for key, value in form_data.items():
+            if "author" in key and value != None:
+                form_authors.add(value)
+        print(form_authors)
+        
         #ALTERNATIVE: DELETE ALL PROJECT_AUTHORS ENTRIES, THEN ADD THEM BASED ON THE EDIT
         cursor.execute("DELETE FROM project_authors WHERE project_id = %s", [id])
         mysql.connection.commit()
-        
-        # #Retrieve all authors in the form
-        form_authors = {}
-        for i in form_data:
-            if "author" in i and i != None:
-                form_authors[i] = form_data[i]
-        
+
         #Re-add authors to project_authors
         #Add new authors if they don't exist
         for i in form_authors:
-            cursor.execute("""SELECT * FROM authors 
+            cursor.execute("""SELECT *, GROUP_CONCAT(CONCAT(' ', other_names.other_name)) other_names FROM authors 
                             LEFT JOIN other_names on other_names.author_id = authors.author_id
-                            WHERE author_name = %s OR other_name = %s""", [form_authors[i], form_authors[i]])
+                            WHERE author_name = %s OR other_name = %s""", [i, i])
             author_fetch = cursor.fetchall()
             #if author not in database: add new author row, add new project_author row
             if len(author_fetch) == 0:
-                cursor.execute("""INSERT INTO authors(`author_name`) VALUES (%s)""", [form_authors[i]])
+                cursor.execute("""INSERT INTO authors(`author_name`) VALUES (%s)""", [i])
                 cursor.execute("""SELECT LAST_INSERT_ID()""")
                 cursor.execute("""INSERT INTO project_authors VALUES (%s, %s)""", [id, cursor.fetchone()['LAST_INSERT_ID()']])
             #if author in database: add new project_author row
-            elif len(author_fetch) >= 1:
+            elif len(author_fetch) == 1:
                 cursor.execute("""INSERT INTO project_authors VALUES (%s, %s)""", [id, author_fetch[0]["author_id"]])
             else:
                 #TODO create redirect for errors
@@ -231,7 +242,7 @@ def projects_edit(id):
         #         cursor.execute("""INSERT INTO project_authors VALUES (%s, %s)""", [id, cursor.fetchone()['LAST_INSERT_ID()']])
 
         mysql.connection.commit()
-        return form_data
+        return redirect(f"/projects/{id}")
         
 
 # route to search authors
@@ -335,13 +346,19 @@ def author_edit(id):
             cursor.execute(othername_query, [othername_data[key], key])
         
         #!IMPORTANT
-        #get the new other names in a list
-        #loop through the list to check if the other name exists 
-        #join authors and othernames, check othername and author_id
-        #if other_name not exist, add other_name entry, add author_other_names entry
-        #similar to adding projects and project_authors
+        #get the new other names in a set
+        #insert othername and author_id
+        new_othernames = set()
+        for key in form_data:
+            if key[0:3] == "new":
+                new_othernames.add(form_data[key])
+        new_othername_query = """INSERT INTO other_names (`other_name`, `author_id`)
+                                VALUES (%s, %s) """
+        for name in new_othernames:
+            cursor.execute(new_othername_query, [name, id])
+
         mysql.connection.commit()
-        return form_data #???
+        return redirect(f"/authors/{id}")
 
 # route to add projects
 @app.route("/add", methods=["GET", "POST"])

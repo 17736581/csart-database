@@ -12,10 +12,13 @@
 <div class="author-container" style="text-align: left;">
     <div class="authors-list">
         {% for author in author_results %}
-            <span><a href="/authors/{{ author['author_id'] }}">{{ author['author_name'] }}</a></span>
-            {% if not loop.last %}
-                ,&nbsp;
-            {% endif %}
+            <span><a href="/authors/{{ author['author_id'] }}">{{ author['author_name'] }}</a>{% if not loop.last %},&nbsp;{% endif %}</span> 
+        {% endfor %}
+    </div>
+    <div class="keywords">
+        <b>Keywords</b>: 
+        {% for keyword in keyword_results %} 
+            <span>{{ keyword['keyword_name'] }}{% if not loop.last %},{% endif %}</span>   
         {% endfor %}
     </div>
     <div class="project-url">
