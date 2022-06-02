@@ -11,13 +11,15 @@
             <tr>
                 <th style="width: 50%;">Title</th>
                 <th>Authors</th>
+                <th>Keywords</th>
             </tr>
         </thead>
         <tbody>
             {% for row in projects %}
                 <tr>
                     <td><a href="/projects/{{ row['project_id'] }}">{{ row["project_name"] }}</a></td>
-                    <td>{{ row["authors"] }}</td>
+                    <td>{{ row["author_names"] }}</td>
+                    <td>{{ row["keyword_names"] }}</td>
                 </tr>
             {% endfor %}
         </tbody>
