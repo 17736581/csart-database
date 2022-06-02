@@ -3,6 +3,7 @@
 #$env:FLASK_ENV = "development"
 
 from ast import keyword
+import string
 from flask import Flask, render_template, request, jsonify, session, redirect
 from flask_mysqldb import MySQL
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -29,7 +30,7 @@ mysql = MySQL(app)
 
 # home page
 @app.route("/")
-@login_required
+#@login_required
 def hello_world():
     cursor = mysql.connection.cursor()
     cursor.execute("""SELECT * FROM Authors""")
@@ -101,23 +102,52 @@ def logout():
 
 # route to search projects
 @app.route("/projects", methods=["GET", "POST"])
-@login_required
+#@login_required
 def projects():
     if request.method == "GET":
         return render_template("project_search.html")
     
     if request.method == "POST":
         cursor = mysql.connection.cursor()
-        project_name = request.form.get("project_name")
-        query = """SELECT projects.project_id, projects.project_name, GROUP_CONCAT(CONCAT(' ', authors.author_name)) authors
-                FROM project_authors
-                INNER JOIN projects ON projects.project_id = project_authors.project_id
-                INNER JOIN authors ON authors.author_id = project_authors.author_id
-                WHERE project_authors.project_id IN
-	            (SELECT project_authors.project_id FROM project_authors)
-                AND projects.project_name LIKE %s
-                GROUP BY projects.project_id"""
-        cursor.execute(query, ["%"+project_name+"%"])
+        search = request.form.to_dict()
+        string_to_null(search)
+        print(search)
+
+        project_name = search['project_name']
+        keyword = search['keyword']
+
+        cursor.execute("CREATE TEMPORARY TABLE temporary_Data (project_id INT(11), project_name VARCHAR(255), author_names varchar(1000));")
+        cursor.execute("""INSERT INTO temporary_Data (`project_id`, `project_name`, `author_names`) 
+                        SELECT projects.project_id, projects.project_name, GROUP_CONCAT(CONCAT(' ', authors.author_name)) author_names
+                        FROM project_authors
+                        INNER JOIN projects ON projects.project_id = project_authors.project_id
+                        INNER JOIN authors ON authors.author_id = project_authors.author_id
+                        GROUP BY projects.project_id;""")
+        cursor.execute("CREATE TEMPORARY TABLE temp_keywords (project_id INT(11), keyword_names varchar(1000));")
+        cursor.execute("""INSERT INTO temp_keywords (`project_id`, `keyword_names`)
+                        SELECT projects.project_id, GROUP_CONCAT(CONCAT(' ', keywords.keyword_name)) keyword_names
+                        FROM project_keywords
+                        INNER JOIN keywords ON keywords.keyword_id = project_keywords.keyword_id
+                        INNER JOIN projects ON projects.project_id = project_keywords.project_id
+                        GROUP BY projects.project_id;""")
+        
+        #Multiple possible searches based on whether project_name and keyword fields are used
+        if project_name != None and keyword != None:            
+            cursor.execute("""SELECT temporary_Data.project_id, project_name, author_names, COALESCE(keyword_names, '') keyword_name FROM temporary_Data
+                            LEFT JOIN temp_keywords ON temp_keywords.project_id = temporary_Data.project_id
+                            WHERE project_name LIKE %s AND keyword_names LIKE %s;""", ["%"+project_name+"%", "%"+keyword+"%"])
+        elif project_name != None and keyword == None:
+            cursor.execute("""SELECT temporary_Data.project_id, project_name, author_names, COALESCE(keyword_names, '') keyword_name FROM temporary_Data
+                            LEFT JOIN temp_keywords ON temp_keywords.project_id = temporary_Data.project_id
+                            WHERE project_name LIKE %s;""", ["%"+project_name+"%"])
+        elif project_name == None and keyword != None:
+            cursor.execute("""SELECT temporary_Data.project_id, project_name, author_names, COALESCE(keyword_names, '') keyword_names FROM temporary_Data
+                            LEFT JOIN temp_keywords ON temp_keywords.project_id = temporary_Data.project_id
+                            WHERE keyword_names LIKE %s;""", ["%"+keyword+"%"])
+        else:
+            cursor.execute("""SELECT temporary_Data.project_id, project_name, author_names, COALESCE(keyword_names, '') keyword_names FROM temporary_Data
+                            LEFT JOIN temp_keywords ON temp_keywords.project_id = temporary_Data.project_id""")
+
         projects = cursor.fetchall()
         return render_template("project_results.html", projects=projects)
 
@@ -171,7 +201,19 @@ def projects_edit(id):
         #Query all authors for author datalist
         cursor.execute("SELECT author_name FROM authors")
         author_list = cursor.fetchall()
-        return render_template("project_edit.html", project_results=project_results, author_results=author_results, author_list=author_list)
+        
+        #Query keywords
+        keyword_query = """SELECT keywords.keyword_id, keywords.keyword_name FROM `project_keywords`
+                        INNER JOIN projects ON projects.project_id = project_keywords.project_id
+                        INNER JOIN keywords ON keywords.keyword_id = project_keywords.keyword_id
+                        WHERE projects.project_id = %s"""
+        cursor.execute(keyword_query, [id])
+        keyword_results = cursor.fetchall()
+        
+        #Query all keywords for keyword datalist
+        cursor.execute("SELECT keyword_name FROM keywords")
+        keyword_list = cursor.fetchall()
+        return render_template("project_edit.html", project_results=project_results, author_results=author_results, author_list=author_list, keyword_results=keyword_results, keyword_list=keyword_list)
     
     if request.method == "POST":
         form_data = request.form.to_dict()
@@ -197,7 +239,6 @@ def projects_edit(id):
         for key, value in form_data.items():
             if "author" in key and value != None:
                 form_authors.add(value)
-        print(form_authors)
         
         #ALTERNATIVE: DELETE ALL PROJECT_AUTHORS ENTRIES, THEN ADD THEM BASED ON THE EDIT
         cursor.execute("DELETE FROM project_authors WHERE project_id = %s", [id])
@@ -220,29 +261,36 @@ def projects_edit(id):
                 cursor.execute("""INSERT INTO project_authors VALUES (%s, %s)""", [id, author_fetch[0]["author_id"]])
             else:
                 #TODO create redirect for errors
-                print("More than one author found")
+                print("Duplicate Error: more than one author found")
 
-        #OLD CODE:
-
-        #Query database for current list of authors and id's > store in variable
-        # cursor.execute("SELECT author_id, author_name FROM authors")
-        # author_dict = {}
-        # for i in cursor.fetchall():
-        #     author_dict[i['author_id']] = i['author_name']      
+        #---Update keywords and project_keywords tables---
+        form_keywords = set()
+        for key, value in form_data.items():
+            if "keyword" in key and value != None:
+                form_keywords.add(value)
         
-        # for i in form_authors:
-        #     if form_authors[i] in author_dict.values():
-        #         print(f"adding {form_authors[i]} with the id of {i} to the project_authors table for project id {id}")
-        #         print(f"{id} == {int(''.join(filter(str.isdigit, i)))}")
-        #         cursor.execute("INSERT INTO project_authors VALUES (%s, %s)", [id, int(''.join(filter(str.isdigit, i)))])
-        #     else:
-        #         print(f"creating new author entry for {form_authors[i]} who appears to be a new author with id {i}")
-        #         cursor.execute("""INSERT INTO authors(`author_name`) VALUES (%s)""", [form_authors[i]])
-        #         cursor.execute("""SELECT LAST_INSERT_ID()""")
-        #         cursor.execute("""INSERT INTO project_authors VALUES (%s, %s)""", [id, cursor.fetchone()['LAST_INSERT_ID()']])
+        #Delete project_keyword entries for this project
+        cursor.execute("DELETE FROM project_keywords WHERE project_id =%s", [id])
+        mysql.connection.commit()
+
+        #Re-add project_keyword entries
+        for i in form_keywords:
+            cursor.execute("""SELECT * FROM keywords WHERE keyword_name = %s""", [i])
+            keyword_fetch = cursor.fetchall()
+            #if keyword not in database: add new keyword, then add project_keyword row for this project
+            if len(keyword_fetch) == 0:
+                cursor.execute("""INSERT INTO keywords(`keyword_name`) VALUES (%s)""", [i])
+                cursor.execute("""SELECT LAST_INSERT_ID()""")
+                cursor.execute("""INSERT INTO project_keywords VALUES (%s, %s)""", [id, cursor.fetchone()['LAST_INSERT_ID()']])
+            elif len(keyword_fetch) == 1:
+                cursor.execute("""INSERT INTO project_keywords VALUES (%s, %s)""", [id, keyword_fetch[0]['keyword_id']])
+            else:
+                print("Duplicate Error: more than one keyword found")
 
         mysql.connection.commit()
         return redirect(f"/projects/{id}")
+
+        #return form_data
         
 
 # route to search authors
@@ -375,12 +423,16 @@ def add():
         form_data = request.form.to_dict()
         
         #Add project to projects table
-        project_insert = """INSERT INTO projects(project_name, url, start_date, end_date, release_date, country, funding_org, funding_amount) 
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
-        for k in form_data:
-            if form_data[k] == '':
-                form_data[k] = None
-        cursor.execute(project_insert, [form_data["project_name"], form_data["url"], form_data["start_date"], form_data["end_date"], form_data["release_date"], form_data["country"], form_data["funding_org"], form_data["funding_amount"]])
+        try:
+            project_insert = """INSERT INTO projects(project_name, url, start_date, end_date, release_date, country, funding_org, funding_amount) 
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
+            for k in form_data:
+                if form_data[k] == '':
+                    form_data[k] = None
+            cursor.execute(project_insert, [form_data["project_name"], form_data["url"], form_data["start_date"], form_data["end_date"], form_data["release_date"], form_data["country"], form_data["funding_org"], form_data["funding_amount"]])
+        except:
+            pass
+            
         #Get the project_id of the project using LAST_INSERT_ID()
         cursor.execute("""SELECT LAST_INSERT_ID()""")
         project_id = cursor.fetchone()['LAST_INSERT_ID()']
