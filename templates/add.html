@@ -5,22 +5,44 @@
 <script>
     $(document).ready(function() {
         var author_count = 1;
-        var wrapper = $("#container1");
-        var add_button = $("#add_form_field");
+        var author_wrapper = $("#author_container");
+        var add_button = $("#add_author_field");
 
-        var x = 1;
         $(add_button).click(function(e) {
             e.preventDefault();
-            x++;
-            $(wrapper).append(`<div class="form-group"><div class="input-group"><input class="form-control" type="text" name="author${author_count}" list="author_list" placeholder="Author"/><button class="btn btn-outline-danger" href="#" id="delete">Delete</button></div></div>`); //add input box
+            $(author_wrapper).append(`<div class="form-group">
+                                    <div class="input-group">
+                                        <input class="form-control" type="text" name="author${author_count}" list="author_list" placeholder="Author"/>
+                                        <button class="btn btn-outline-danger" href="#" id="delete">Delete</button>
+                                    </div>
+                                </div>`); //add input box
             author_count++;
         });
 
-        $(wrapper).on("click", "#delete", function(e) {
+        $(author_wrapper).on("click", "#delete", function(e) {
             e.preventDefault();
             $(this).parent('div').remove();
-            x--;
-        })
+        });
+        
+        var keyword_count = 1;
+        var keyword_wrapper = $("#keyword_container");
+        var keyword_button = $("#add_keyword_field");
+        
+        $(keyword_button).click(function(e) {
+            e.preventDefault();
+            $(keyword_wrapper).append(`<div class="form-group">
+                                        <div class="input-group">
+                                            <input class="form-control" type="text" name="keyword${keyword_count}" list="keyword_list" placeholder="Keyword"/>
+                                            <button class="btn btn-outline-danger" id="delete">Delete</button>
+                                        </div>
+                                    </div>`);
+            keyword_count++;
+        });
+
+        $(keyword_wrapper).on("click", "#delete", function(e) {
+            e.preventDefault();
+            $(this).parent('div').remove();
+        });
     });
 </script>
 {% endblock %}
@@ -31,10 +53,15 @@
 
 {% block main %}
 <form action="/add" method="post">
+    <!-- Project Name -->
+    <h5>Project Name</h5>
     <div class="form-group">
         <input class="form-control" id="project_name" name="project_name" type="text" placeholder="Project Name" required>
     </div>
-    <div class="form-group" id="container1">
+    <br>
+    <!-- Authors -->
+    <h5>Authors</h5>
+    <div class="form-group" id="author_container">
         <div class="form-group">
             <div class="input-group">
                 <input class="form-control" type="text" name="author0" list="author_list" placeholder="Author" required>
@@ -43,15 +70,38 @@
                         <option value="{{ author['author_name'] }}">{{ author['author_name'] }}</option>
                     {% endfor %}
                 </datalist>
-                <button class="btn btn-outline-secondary" id="add_form_field">Add Author
+                <button class="btn btn-outline-secondary" id="add_author_field">Add Author
                     <span style="font-size:16px; font-weight:bold;">+ </span>
                 </button>
             </div>
         </div>
     </div>
+    <br>
+    <!-- Keywords -->
+    <h5>Keywords</h5>
+    <div class="form-group" id="keyword_container">
+        <div class="form-group">
+            <div class="input-group">
+                <input class="form-control" type="text" name="keyword0" list="keyword_list" placeholder="Keyword">
+                <datalist id="keyword_list">
+                    {% for listed_keyword in keyword_list %}
+                        <option value="{{ listed_keyword['keyword_name'] }}">{{ listed_keyword['keyword_name'] }}</option>
+                    {% endfor %}
+                </datalist>
+                <button class="btn btn-outline-secondary" id="add_keyword_field">Add Keyword
+                    <span style="font-size:16px; font-weight:bold;">+ </span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <br>
+    <!-- URL -->
+    <h5>URL</h5>
     <div class="form-group">
         <input class="form-control" id="url" name="url" type="text" placeholder="URL" required>
     </div>
+    <!-- Dates -->
+    <h5>Dates</h5>
     <div class="form-group">
         <label for="start_date">Start Date</label>
         <input class="form-control" id="start_date" name="start_date" type="date" title="Start Date">
@@ -59,15 +109,20 @@
     <div class="form-group">
         <label for="end_date">End Date</label>
         <input class="form-control" id="end_date" name="end_date" type="date" placeholder="End Date">
-    </div>
-    
+    </div> 
     <div class="form-group">
         <label for="release_date">Release Date</label>
         <input class="form-control" id="release_date" name="release_date" type="date" placeholder="Release Date">
     </div>
+    <br>
+    <!-- Country -->
+    <h5>Country</h5>
     <div class="form-group">
         <input class="form-control" id="country" name="country" type="text" placeholder="Country">
     </div>
+    <br>
+    <!-- Funding -->
+    <h5>Funding</h5>
     <div class="form-group">
         <input class="form-control" id="funding_org" name="funding_org" type="text" placeholder="Funding Source">
     </div>

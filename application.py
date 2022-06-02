@@ -414,9 +414,15 @@ def author_edit(id):
 def add():
     if request.method == "GET":
         cursor = mysql.connection.cursor()
+
+        #Query all authors for author datalist
         cursor.execute("""SELECT author_name FROM authors""")
         authors = cursor.fetchall()
-        return render_template("add.html", authors=authors)
+
+        #Query all keywords for keyword datalist
+        cursor.execute("SELECT keyword_name FROM keywords")
+        keyword_list = cursor.fetchall()
+        return render_template("add.html", authors=authors, keyword_list=keyword_list)
     
     if request.method == "POST":
         cursor = mysql.connection.cursor()
@@ -426,10 +432,9 @@ def add():
         try:
             project_insert = """INSERT INTO projects(project_name, url, start_date, end_date, release_date, country, funding_org, funding_amount) 
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
-            for k in form_data:
-                if form_data[k] == '':
-                    form_data[k] = None
+            string_to_null(form_data)
             cursor.execute(project_insert, [form_data["project_name"], form_data["url"], form_data["start_date"], form_data["end_date"], form_data["release_date"], form_data["country"], form_data["funding_org"], form_data["funding_amount"]])
+            mysql.connection.commit()
         except:
             pass
             
@@ -439,21 +444,22 @@ def add():
 
         #retrieve all the authors in the form and put them in a new dictionary
         #remember there is a variable number of authors per project
-        form_authors = {}
-        for i in form_data:
-            if i[0:6] == "author":
-                form_authors[i] = form_data[i]
-        
+        #prevent duplicates; use a set
+        form_authors = set()
+        for key, value in form_data.items():
+            if "author" in key and value != None:
+                form_authors.add(value)
+
         #Add authors to author table (if they don't already exist)
         #Also add new row to project_authors containing project_id and author_id for each author
         for i in form_authors:
             cursor.execute("""SELECT * FROM authors 
                             LEFT JOIN other_names on other_names.author_id = authors.author_id
-                            WHERE author_name = %s OR other_name = %s""", [form_authors[i], form_authors[i]])
+                            WHERE author_name = %s OR other_name = %s""", [i, i])
             author_fetch = cursor.fetchall()
             #if author not in database: add new author row, add new project_author row
             if len(author_fetch) == 0:
-                cursor.execute("""INSERT INTO authors(`author_name`) VALUES (%s)""", [form_authors[i]])
+                cursor.execute("""INSERT INTO authors(`author_name`) VALUES (%s)""", [i])
                 cursor.execute("""SELECT LAST_INSERT_ID()""")
                 cursor.execute("""INSERT INTO project_authors VALUES (%s, %s)""", [project_id, cursor.fetchone()['LAST_INSERT_ID()']])
             #if author in database: add new project_author row
@@ -462,6 +468,26 @@ def add():
             else:
                 #TODO create redirect for errors
                 print("More than one author found")
+        
+        #Add keywords, project_keywords
+        form_keywords = set()
+        for key, value in form_data.items():
+            if "keyword" in key and value != None:
+                form_keywords.add(value)
+        print(form_keywords)
+        #Re-add project_keyword entries
+        for i in form_keywords:
+            cursor.execute("""SELECT * FROM keywords WHERE keyword_name = %s""", [i])
+            keyword_fetch = cursor.fetchall()
+            #if keyword not in database: add new keyword, then add project_keyword row for this project
+            if len(keyword_fetch) == 0:
+                cursor.execute("""INSERT INTO keywords(`keyword_name`) VALUES (%s)""", [i])
+                cursor.execute("""SELECT LAST_INSERT_ID()""")
+                cursor.execute("""INSERT INTO project_keywords VALUES (%s, %s)""", [project_id, cursor.fetchone()['LAST_INSERT_ID()']])
+            elif len(keyword_fetch) == 1:
+                cursor.execute("""INSERT INTO project_keywords VALUES (%s, %s)""", [project_id, keyword_fetch[0]['keyword_id']])
+            else:
+                print("Duplicate Error: more than one keyword found")
 
         mysql.connection.commit()
         return redirect("/projects/" + str(project_id))
