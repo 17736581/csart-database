@@ -141,6 +141,6 @@
         <input class="form-control" id="funding_amount" name="funding_amount" type="number" placeholder="Funding Amount" value="{{ project_results['funding_amount'] }}">
     </div>
     <button type="submit" class="btn btn-primary" formaction="/projects/{{ project_results['project_id'] }}/edit">Submit</button>
-    <a href="/projects/{{ project_results['project_id'] }}"><button class="btn btn-secondary" formaction="/projects/{{ project_results['project_id'] }}" formmethod="get" formnovalidate>Cancel</button></a>
+    <button type="button" class="btn btn-secondary" onclick="window.history.back();">Cancel</button>
 </form>
 {% endblock %}

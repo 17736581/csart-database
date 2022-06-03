@@ -4,6 +4,7 @@
 
 from ast import keyword
 import string
+from colorama import Cursor
 from flask import Flask, render_template, request, jsonify, session, redirect
 from flask_mysqldb import MySQL
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -133,11 +134,11 @@ def projects():
         
         #Multiple possible searches based on whether project_name and keyword fields are used
         if project_name != None and keyword != None:            
-            cursor.execute("""SELECT temporary_Data.project_id, project_name, author_names, COALESCE(keyword_names, '') keyword_name FROM temporary_Data
+            cursor.execute("""SELECT temporary_Data.project_id, project_name, author_names, COALESCE(keyword_names, '') keyword_names FROM temporary_Data
                             LEFT JOIN temp_keywords ON temp_keywords.project_id = temporary_Data.project_id
                             WHERE project_name LIKE %s AND keyword_names LIKE %s;""", ["%"+project_name+"%", "%"+keyword+"%"])
         elif project_name != None and keyword == None:
-            cursor.execute("""SELECT temporary_Data.project_id, project_name, author_names, COALESCE(keyword_names, '') keyword_name FROM temporary_Data
+            cursor.execute("""SELECT temporary_Data.project_id, project_name, author_names, COALESCE(keyword_names, '') keyword_names FROM temporary_Data
                             LEFT JOIN temp_keywords ON temp_keywords.project_id = temporary_Data.project_id
                             WHERE project_name LIKE %s;""", ["%"+project_name+"%"])
         elif project_name == None and keyword != None:
@@ -149,7 +150,15 @@ def projects():
                             LEFT JOIN temp_keywords ON temp_keywords.project_id = temporary_Data.project_id""")
 
         projects = cursor.fetchall()
-        return render_template("project_results.html", projects=projects)
+
+        #Get keywords as a list
+        cursor.execute("""SELECT projects.project_id, keywords.keyword_name
+                        FROM project_keywords
+                        INNER JOIN keywords ON keywords.keyword_id = project_keywords.keyword_id
+                        INNER JOIN projects ON projects.project_id = project_keywords.project_id""")
+        keywords = cursor.fetchall()
+
+        return render_template("project_results.html", projects=projects, keywords=keywords)
 
 @app.route("/projects/<id>")
 @login_required
@@ -496,6 +505,60 @@ def add():
 
 # @app.route('/_autocomplete')
 # def autocomplete():
+
+#Keyword Search
+@app.route("/keywords", methods=["GET", "POST"])
+def keywords():
+    cursor = mysql.connection.cursor()
+    if request.method == "GET":
+        cursor.execute("SELECT * FROM keywords")
+        keyword_list = cursor.fetchall()
+        return render_template("keyword_search.html", keyword_list=keyword_list)
+
+    elif request.method == "POST":
+        keyword_name = request.form.get("keyword_name")
+        keyword_query = """SELECT keywords.keyword_id, keywords.keyword_name, COUNT(*) as project_count FROM keywords
+                        INNER JOIN project_keywords ON project_keywords.keyword_id = keywords.keyword_id
+                        WHERE keyword_name LIKE %s
+                        GROUP BY keywords.keyword_name
+                        ORDER BY project_count DESC"""
+        cursor.execute(keyword_query, ["%"+keyword_name+"%"])
+        keyword_results = cursor.fetchall()
+
+        if len(keyword_results) == 1:
+            return redirect(f"/keywords/{keyword_results[0]['keyword_name']}")
+        
+        return render_template("keyword_results.html", keyword_results=keyword_results)
+
+
+#Keyword Profile
+@app.route("/keywords/<keyword>")
+def keyword_profile(keyword):
+    cursor = mysql.connection.cursor()
+    keyword_query = """SELECT DISTINCT authors.author_id, authors.author_name, COUNT(*) AS count FROM project_authors
+                    INNER JOIN projects ON projects.project_id = project_authors.project_id
+                    INNER JOIN authors ON authors.author_id = project_authors.author_id
+                    WHERE project_authors.project_id IN
+                        (SELECT projects.project_id FROM `project_keywords`
+                        INNER JOIN projects on projects.project_id = project_keywords.project_id
+                        INNER JOIN keywords on keywords.keyword_id = project_keywords.keyword_id
+                        WHERE keywords.keyword_name = %s)
+                    GROUP BY authors.author_id
+                    ORDER BY count DESC;"""
+    cursor.execute(keyword_query, [keyword])
+    keyword_results = cursor.fetchall()
+    
+    project_query = """SELECT projects.project_id, projects.project_name, GROUP_CONCAT(CONCAT(' ', authors.author_name)) author_names FROM project_authors
+                    INNER JOIN projects ON projects.project_id = project_authors.project_id
+                    INNER JOIN authors ON authors.author_id = project_authors.author_id
+                    WHERE project_authors.project_id IN
+                        (SELECT project_id FROM project_keywords
+                        INNER JOIN keywords ON keywords.keyword_id = project_keywords.keyword_id
+                        WHERE keyword_name = %s)
+                    GROUP BY projects.project_id"""
+    cursor.execute(project_query, [keyword])
+    project_results = cursor.fetchall()
+    return render_template("keyword_profile.html", keyword_results=keyword_results, keyword=string.capwords(keyword), project_results=project_results)
 
 @app.route("/network")
 def network():

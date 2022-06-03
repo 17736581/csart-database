@@ -1,5 +1,18 @@
 {% extends "layout.html" %}
 
+{% block head %}
+    <script>
+        $(document).ready(function() {
+            var keyword_wrapper = $(".keyword_container");
+            
+            $(keyword_wrapper).each(function(){
+                console.log(this);
+                $(this).find("span:last").remove();
+            });
+        });
+    </script>
+{% endblock %}
+
 {% block title %}
     Projects
 {% endblock %}
@@ -16,10 +29,17 @@
         </thead>
         <tbody>
             {% for row in projects %}
-                <tr>
+                <tr class="keyword_container">
                     <td><a href="/projects/{{ row['project_id'] }}">{{ row["project_name"] }}</a></td>
                     <td>{{ row["author_names"] }}</td>
-                    <td>{{ row["keyword_names"] }}</td>
+                    <td>{% for keyword in keywords %}
+                            {% if keyword['project_id'] == row['project_id'] %}
+                                <span>
+                                    <a href="/keywords/{{ keyword['keyword_name'] }}">{{ keyword['keyword_name'] }}</a><span id="comma">,</span>
+                                </span>
+                            {% endif %}
+                        {% endfor %}
+                    </td>
                 </tr>
             {% endfor %}
         </tbody>

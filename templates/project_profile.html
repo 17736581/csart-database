@@ -18,7 +18,7 @@
     <div class="keywords">
         <b>Keywords</b>: 
         {% for keyword in keyword_results %} 
-            <span>{{ keyword['keyword_name'] }}{% if not loop.last %},{% endif %}</span>   
+            <span><a href="/keywords/{{ keyword['keyword_name'] }}">{{ keyword['keyword_name'] }}</a>{% if not loop.last %},{% endif %}</span>   
         {% endfor %}
     </div>
     <div class="project-url">
@@ -48,75 +48,5 @@
 </div>
 
 <a href="/projects/{{ project_results['project_id'] }}/edit"><button class="btn btn-primary">Edit Project</button></a>
-
-<!-- 
-
-
-
-
-
-
-<br>
-<br>
-<br>
-<br>
-
-<div class="container-fluid">
-    <div class="row content">
-        <div class="col-sm-3 sidenav">
-            <h5>Authors</h5>
-            <ul class="list-group">
-                {% for author in author_results %}
-                <li class="list-group-item"><a href="/authors/{{ author['author_id'] }}">{{ author['author_name'] }}</a></li>
-                {% endfor %}
-            </ul>
-        </div>
-        <div class="col-sm-9" style="text-align: left;">
-            <div class="row">
-                <div class="col">
-                    <h5>URL</h5>
-                </div>
-                <div class="col">
-                    <a href="{{ project_results['url'] }}">{{ project_results['url'] }}</a>
-                </div>
-            </div>
-            
-            <div class="row">
-                {% if project_results['release_date'] %}
-                <div class="col">
-                    <h5>Release Date</h5>
-                </div>
-                {{ project_results['release_date'] }}
-            
-            {% elif project_results['start_date'] or project_results['end_date'] %}
-                <div class="col">
-                    <h5>Dates</h5>
-                </div> 
-                <b>Start Date:</b> {{ project_results['start_date'] }}
-                <b>End Date:</b> {{ project_results['end_date'] }}
-
-            {% else %}
-                <h5>Dates</h5>
-                <b>Start Date:</b> {{ project_results['start_date'] }}
-                <b>End Date:</b> {{ project_results['end_date'] }}
-                Release Date: {{ project_results['release_date'] }}
-            {% endif %}
-            </div>
-           
-            {% if project_results['funding_org'] and project_results['funding_amount'] %}
-            <h5>Funding</h5>
-            Funding Organisation: {{ project_results['funding_org'] }}
-            Funding Amount: ${{ project_results['funding_amount'] }}
-            {% endif %}
-        </div>
-
-    </div>
-
-</div> -->
-
-
-
-
-
 
 {% endblock %}
