@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Keyword - {{ keyword }}
+{% endblock %}
+
+{% block main %}
+<h2><span style="font-weight: normal;">Keyword: </span>{{ keyword }}</h2>
+<hr>
+<br>
+
+<h4>Projects</h4>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Project Name</th>
+            <th>Authors</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for project in project_results %}
+        <tr>
+            <td><a href="/projects/{{ project['project_id'] }}">{{ project['project_name'] }}</a></td>           
+            <td>{{ project['author_names'] }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<br>
+<h4>Significant Authors</h4>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Author</th>
+            <th>Count</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for author in keyword_results %}
+        <tr>
+            <td><a href="/authors/{{ author['author_id'] }}">{{ author['author_name'] }}</a></td>
+            <td>{{ author['count'] }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Keyword Results
+{% endblock %}
+
+{% block main %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Keyword</th>
+                <th>Project Count</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in keyword_results %}
+            <tr>
+                <td><a href="keywords/{{row['keyword_name']}}">{{row['keyword_name']}}</a></td>
+                <td>{{ row['project_count'] }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    
+{% endblock %}
