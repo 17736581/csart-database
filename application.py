@@ -1,7 +1,3 @@
-#Set up environment variables
-#$env:FLASK_APP = "application"
-#$env:FLASK_ENV = "development"
-
 from ast import keyword
 import string
 from colorama import Cursor

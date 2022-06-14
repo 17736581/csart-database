@@ -32,34 +32,6 @@
 {% endblock %}
 
 {% block main %}
-<!-- <table class="table">
-    <thead>
-        <tr>
-            <th style="width: 50%;">Title</th>
-            <th>Date</th>
-            <th>Authors</th>
-            <th>Keywords</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in projects %}
-            <tr class="keyword_container">
-                <td><a href="/projects/{{ row['project_id'] }}">{{ row["project_name"] }}</a></td>
-                <td>{{ row["release_date"] }}</td>
-                <td>{{ row["author_names"] }}</td>
-                <td>{% for keyword in keywords %}
-                        {% if keyword['project_id'] == row['project_id'] %}
-                            <span>
-                                <a href="/keywords/{{ keyword['keyword_name'] }}">{{ keyword['keyword_name'] }}</a><span id="comma">,</span>
-                            </span>
-                        {% endif %}
-                    {% endfor %}
-                </td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
- -->
 
 {% for row in projects%}
 <div class="project_container">
@@ -98,9 +70,3 @@
 
 
 {% endblock %}
-
-<button class="btn btn-link" data-toggle="collapseOne" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">Statement</button>
-<div id="collapseOne" class="collapse" data-parent="#project_container"></div>
-    <div class="card-body">
-        <p></p>
-    </div>
