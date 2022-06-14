@@ -6,8 +6,22 @@
             var keyword_wrapper = $(".keyword_container");
             
             $(keyword_wrapper).each(function(){
-                console.log(this);
                 $(this).find("span:last").remove();
+            });
+
+            var project_wrapper = $(".project_container");
+            
+            $(project_wrapper).each(function(){
+                $(this).find("span:last").remove();
+            });
+
+            $('.btn').click(function() {
+                var text = $(this).text()
+                if(text === 'Hide Summary'){
+                    $(this).html('Show Summary');
+                } else {
+                    $(this).html('Hide Summary');
+                }
             });
         });
     </script>
@@ -18,31 +32,75 @@
 {% endblock %}
 
 {% block main %}
-<body>
-    <table class="table">
-        <thead>
-            <tr>
-                <th style="width: 50%;">Title</th>
-                <th>Authors</th>
-                <th>Keywords</th>
+<!-- <table class="table">
+    <thead>
+        <tr>
+            <th style="width: 50%;">Title</th>
+            <th>Date</th>
+            <th>Authors</th>
+            <th>Keywords</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in projects %}
+            <tr class="keyword_container">
+                <td><a href="/projects/{{ row['project_id'] }}">{{ row["project_name"] }}</a></td>
+                <td>{{ row["release_date"] }}</td>
+                <td>{{ row["author_names"] }}</td>
+                <td>{% for keyword in keywords %}
+                        {% if keyword['project_id'] == row['project_id'] %}
+                            <span>
+                                <a href="/keywords/{{ keyword['keyword_name'] }}">{{ keyword['keyword_name'] }}</a><span id="comma">,</span>
+                            </span>
+                        {% endif %}
+                    {% endfor %}
+                </td>
             </tr>
-        </thead>
-        <tbody>
-            {% for row in projects %}
-                <tr class="keyword_container">
-                    <td><a href="/projects/{{ row['project_id'] }}">{{ row["project_name"] }}</a></td>
-                    <td>{{ row["author_names"] }}</td>
-                    <td>{% for keyword in keywords %}
-                            {% if keyword['project_id'] == row['project_id'] %}
-                                <span>
-                                    <a href="/keywords/{{ keyword['keyword_name'] }}">{{ keyword['keyword_name'] }}</a><span id="comma">,</span>
-                                </span>
-                            {% endif %}
-                        {% endfor %}
-                    </td>
-                </tr>
+        {% endfor %}
+    </tbody>
+</table>
+ -->
+
+{% for row in projects%}
+<div class="project_container">
+    <div class="card" style="text-align:left;">
+        <h5 class="card-header"><a href="/projects/{{ row['project_id'] }}">{{ row["project_name"] }}</a></h5>
+        <div class="card-body">
+            {% if row['release_date'] != '' %}
+                <p><b>Release Date: </b>{{ row['release_date'] }}</p>
+            {% elif row['start_date'] != '' %}
+                <p><b>Dates: </b>{{ row['start_date'] }} - {{ row['end_date'] }}</p>
+            {% endif %}
+            <p class="card-text"><b>Contributors:</b>{{ row["author_names"] }}</p>
+            <p><b>Keywords:</b>
+            {% for keyword in keywords %}
+                {% if keyword['project_id'] == row['project_id'] %}
+                    <a href="/keywords/{{ keyword['keyword_name'] }}">{{ keyword['keyword_name'] }}</a><span id="comma">,</span>
+                {% endif %}
             {% endfor %}
-        </tbody>
-    </table>
-</body>
+            </p>
+            <p><b>URL: </b><a href="{{ row['url'] }}">{{ row['url'] }}</a></p>
+            {% if row['statement'] !=  '' %}
+            <a class="btn btn-link shadow-none" data-toggle="collapse" href="#collapse{{ row['project_id'] }}" aria-expanded="false" aria-controls="collapse{{ row['project_id'] }}">
+                Show Summary
+            </a>
+            <div class="collapse" id="collapse{{ row['project_id'] }}">
+            <p>
+                {{ row['statement'] }}
+            </p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <br>
+</div>
+{% endfor %}
+
+
 {% endblock %}
+
+<button class="btn btn-link" data-toggle="collapseOne" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">Statement</button>
+<div id="collapseOne" class="collapse" data-parent="#project_container"></div>
+    <div class="card-body">
+        <p></p>
+    </div>

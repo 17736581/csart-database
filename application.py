@@ -12,12 +12,12 @@ from helpers import login_required, null_to_string, string_to_null
 import csv, os
 
 app = Flask(__name__)
-app.config["TEMPLATES_AUTO_RELOAD"] = True
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0")
 
 app.config["MYSQL_USER"] = "root"
-app.config["MYSQL_PASSWORD"] = ""
+app.config["MYSQL_PASSWORD"] = """u1ozP`H+g^A"Ndw"""
 app.config["MYSQL_DB"] = "csart_db"
 app.config["MYSQL_CURSORCLASS"] = "DictCursor"
 app.config["JSON_AS_ASCII"] = False
@@ -25,46 +25,43 @@ app.config['JSON_SORT_KEYS'] = False
 app.url_map.strict_slashes = False
 
 #Set the secret key
-app.secret_key = os.urandom(16)
+app.secret_key = b'\x8a\x0f\x1c`n\xc8\xde\xc0\x04\x12\x82\x9b\xc4\xec\xe5C'
 
 mysql = MySQL(app)
 
 # home page
 @app.route("/")
-#@login_required
+@login_required
 def hello_world():
-    cursor = mysql.connection.cursor()
-    cursor.execute("""SELECT * FROM Authors""")
-    authors = cursor.fetchall()
     return render_template("index.html", authors=authors)
 
-@app.route("/register", methods=["GET", "POST"])
-def register():
-    cursor = mysql.connection.cursor()
+# @app.route("/register", methods=["GET", "POST"])
+# def register():
+#     cursor = mysql.connection.cursor()
 
-    if request.method == "POST":
-        name = request.form.get("username")
-        password = request.form.get("password")
-        confirmation = request.form.get("confirmation")
+#     if request.method == "POST":
+#         name = request.form.get("username")
+#         password = request.form.get("password")
+#         confirmation = request.form.get("confirmation")
 
-        if not name:
-            return "must provide username"
+#         if not name:
+#             return "must provide username"
         
-        cursor.execute("SELECT * FROM users WHERE username = %s", [name])
-        if len(cursor.fetchall()) != 0:
-            return "username taken"
+#         cursor.execute("SELECT * FROM users WHERE username = %s", [name])
+#         if len(cursor.fetchall()) != 0:
+#             return "username taken"
 
-        if password != confirmation or password == "" or confirmation == "":
-            return "please re-enter password"
+#         if password != confirmation or password == "" or confirmation == "":
+#             return "please re-enter password"
         
-        hashed = generate_password_hash(password)
+#         hashed = generate_password_hash(password)
 
-        cursor.execute("INSERT INTO users (username, hash) VALUES (%s, %s)", [name, hashed])
-        mysql.connection.commit()
-        return render_template("login.html")
+#         cursor.execute("INSERT INTO users (username, hash) VALUES (%s, %s)", [name, hashed])
+#         mysql.connection.commit()
+#         return render_template("login.html")
     
-    else:
-        return render_template("register.html")
+#     else:
+#         return render_template("register.html")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -103,7 +100,7 @@ def logout():
 
 # route to search projects
 @app.route("/projects", methods=["GET", "POST"])
-#@login_required
+@login_required
 def projects():
     if request.method == "GET":
         return render_template("project_search.html")
@@ -112,46 +109,68 @@ def projects():
         cursor = mysql.connection.cursor()
         search = request.form.to_dict()
         string_to_null(search)
-        print(search)
 
         project_name = search['project_name']
         keyword = search['keyword']
 
-        cursor.execute("CREATE TEMPORARY TABLE temporary_Data (project_id INT(11), project_name VARCHAR(255), author_names varchar(1000));")
-        cursor.execute("""INSERT INTO temporary_Data (`project_id`, `project_name`, `author_names`) 
-                        SELECT projects.project_id, projects.project_name, GROUP_CONCAT(CONCAT(' ', authors.author_name)) author_names
-                        FROM project_authors
-                        INNER JOIN projects ON projects.project_id = project_authors.project_id
-                        INNER JOIN authors ON authors.author_id = project_authors.author_id
-                        GROUP BY projects.project_id;""")
-        cursor.execute("CREATE TEMPORARY TABLE temp_keywords (project_id INT(11), keyword_names varchar(1000));")
-        cursor.execute("""INSERT INTO temp_keywords (`project_id`, `keyword_names`)
-                        SELECT projects.project_id, GROUP_CONCAT(CONCAT(' ', keywords.keyword_name)) keyword_names
-                        FROM project_keywords
-                        INNER JOIN keywords ON keywords.keyword_id = project_keywords.keyword_id
-                        INNER JOIN projects ON projects.project_id = project_keywords.project_id
-                        GROUP BY projects.project_id;""")
+        # cursor.execute("CREATE TEMPORARY TABLE temporary_Data (project_id INT(11), project_name VARCHAR(255), author_names varchar(1000));")
+        # cursor.execute("""INSERT INTO temporary_Data (`project_id`, `project_name`, `author_names`) 
+        #                 SELECT projects.project_id, projects.project_name, GROUP_CONCAT(CONCAT(' ', authors.author_name)) author_names
+        #                 FROM project_authors
+        #                 INNER JOIN projects ON projects.project_id = project_authors.project_id
+        #                 INNER JOIN authors ON authors.author_id = project_authors.author_id
+        #                 GROUP BY projects.project_id;""")
+        # cursor.execute("CREATE TEMPORARY TABLE temp_keywords (project_id INT(11), keyword_names varchar(1000));")
+        # cursor.execute("""INSERT INTO temp_keywords (`project_id`, `keyword_names`)
+        #                 SELECT projects.project_id, GROUP_CONCAT(CONCAT(' ', keywords.keyword_name)) keyword_names
+        #                 FROM project_keywords
+        #                 INNER JOIN keywords ON keywords.keyword_id = project_keywords.keyword_id
+        #                 INNER JOIN projects ON projects.project_id = project_keywords.project_id
+        #                 GROUP BY projects.project_id;""")
+
+        cursor.execute("""CREATE TEMPORARY TABLE temp_projects 
+                            SELECT projects.project_id, projects.project_name, GROUP_CONCAT(CONCAT(' ', authors.author_name)) author_names, start_date, end_date, release_date, url, projects.statement
+                            FROM project_authors
+                            INNER JOIN projects ON projects.project_id = project_authors.project_id
+                            INNER JOIN authors ON authors.author_id = project_authors.author_id
+                            GROUP BY projects.project_id;""")
+        cursor.execute("""CREATE TEMPORARY TABLE temp_keywords
+                            SELECT projects.project_id AS k_project_id, GROUP_CONCAT(CONCAT(' ', keywords.keyword_name)) keyword_names
+                            FROM project_keywords
+                            INNER JOIN keywords ON keywords.keyword_id = project_keywords.keyword_id
+                            INNER JOIN projects ON projects.project_id = project_keywords.project_id
+                            GROUP BY projects.project_id;""")
         
         #Multiple possible searches based on whether project_name and keyword fields are used
         if project_name != None and keyword != None:            
-            cursor.execute("""SELECT temporary_Data.project_id, project_name, author_names, COALESCE(keyword_names, '') keyword_names FROM temporary_Data
-                            LEFT JOIN temp_keywords ON temp_keywords.project_id = temporary_Data.project_id
-                            WHERE project_name LIKE %s AND keyword_names LIKE %s;""", ["%"+project_name+"%", "%"+keyword+"%"])
+            cursor.execute("""SELECT *
+                            FROM temp_projects
+                            LEFT JOIN temp_keywords ON temp_keywords.k_project_id = temp_projects.project_id
+                            WHERE project_name LIKE %s AND keyword_names LIKE %s
+                            ORDER BY COALESCE(release_date, end_date, start_date) DESC;""", ["%"+project_name+"%", "%"+keyword+"%"]
+                            )
         elif project_name != None and keyword == None:
-            cursor.execute("""SELECT temporary_Data.project_id, project_name, author_names, COALESCE(keyword_names, '') keyword_names FROM temporary_Data
-                            LEFT JOIN temp_keywords ON temp_keywords.project_id = temporary_Data.project_id
-                            WHERE project_name LIKE %s;""", ["%"+project_name+"%"])
+            cursor.execute("""SELECT *
+                            FROM temp_projects
+                            LEFT JOIN temp_keywords ON temp_keywords.k_project_id = temp_projects.project_id
+                            WHERE project_name LIKE %s
+                            ORDER BY COALESCE(release_date, end_date, start_date) DESC;""", ["%"+project_name+"%"])
         elif project_name == None and keyword != None:
-            cursor.execute("""SELECT temporary_Data.project_id, project_name, author_names, COALESCE(keyword_names, '') keyword_names FROM temporary_Data
-                            LEFT JOIN temp_keywords ON temp_keywords.project_id = temporary_Data.project_id
-                            WHERE keyword_names LIKE %s;""", ["%"+keyword+"%"])
+            cursor.execute("""SELECT *
+                            FROM temp_projects
+                            LEFT JOIN temp_keywords ON temp_keywords.k_project_id = temp_projects.project_id
+                            WHERE keyword_names LIKE %s
+                            ORDER BY COALESCE(release_date, end_date, start_date) DESC;""", ["%"+keyword+"%"])
         else:
-            cursor.execute("""SELECT temporary_Data.project_id, project_name, author_names, COALESCE(keyword_names, '') keyword_names FROM temporary_Data
-                            LEFT JOIN temp_keywords ON temp_keywords.project_id = temporary_Data.project_id""")
+            cursor.execute("""SELECT *
+                            FROM temp_projects
+                            LEFT JOIN temp_keywords ON temp_keywords.k_project_id = temp_projects.project_id
+                            ORDER BY COALESCE(release_date, end_date, start_date) DESC;""")
 
         projects = cursor.fetchall()
+        projects = null_to_string(projects)
 
-        #Get keywords as a list
+        #Get keywords as a list to create links for keywords
         cursor.execute("""SELECT projects.project_id, keywords.keyword_name
                         FROM project_keywords
                         INNER JOIN keywords ON keywords.keyword_id = project_keywords.keyword_id
@@ -188,7 +207,7 @@ def projects_id(id):
     return render_template("project_profile.html", project_results=project_results, author_results=author_results, keyword_results=keyword_results)
 
 @app.route("/projects/<id>/edit", methods=["GET", "POST"])
-# @login_required
+@login_required
 def projects_edit(id):
     cursor = mysql.connection.cursor()
     if request.method == "GET":
@@ -226,12 +245,18 @@ def projects_edit(id):
     
     if request.method == "POST":
         form_data = request.form.to_dict()
+
+        #Strip whitespace from form data
+        for i in form_data:
+            form_data[i] = form_data[i].strip()
+
         form_data = string_to_null(form_data)
 
         #Update projects table
         project_query = """UPDATE projects
                             SET project_name = %s,
                                 url = %s,
+                                statement = %s,
                                 start_date = %s,
                                 end_date = %s,
                                 release_date = %s,
@@ -239,7 +264,7 @@ def projects_edit(id):
                                 funding_org = %s,
                                 funding_amount = %s
                             WHERE project_id = %s"""
-        cursor.execute(project_query, [form_data['project_name'], form_data['url'], form_data['start_date'], form_data['end_date'], form_data['release_date'],
+        cursor.execute(project_query, [form_data['project_name'], form_data['url'], form_data['statement'], form_data['start_date'], form_data['end_date'], form_data['release_date'],
                                      form_data['country'], form_data['funding_org'], form_data['funding_amount'], id])
         
         # #Retrieve all authors in the form
@@ -298,9 +323,6 @@ def projects_edit(id):
 
         mysql.connection.commit()
         return redirect(f"/projects/{id}")
-
-        #return form_data
-        
 
 # route to search authors
 @app.route("/authors", methods=["GET", "POST"])
@@ -377,6 +399,11 @@ def author_edit(id):
         #processing the updated author data comes in three parts:
         #updating author table, updating existing other_names, adding new other_names
         form_data = request.form.to_dict()
+
+        #Strip whitespace from form data
+        for i in form_data:
+            form_data[i] = form_data[i].strip()
+
         form_data = string_to_null(form_data)
 
         #update author table
@@ -437,12 +464,16 @@ def add():
         cursor = mysql.connection.cursor()
         form_data = request.form.to_dict()
         
+        #Strip form data of whitespace
+        for i in form_data:
+            form_data[i] = form_data[i].strip()
+        
         #Add project to projects table
         try:
-            project_insert = """INSERT INTO projects(project_name, url, start_date, end_date, release_date, country, funding_org, funding_amount) 
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
+            project_insert = """INSERT INTO projects(project_name, url, statement, start_date, end_date, release_date, country, funding_org, funding_amount) 
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
             string_to_null(form_data)
-            cursor.execute(project_insert, [form_data["project_name"], form_data["url"], form_data["start_date"], form_data["end_date"], form_data["release_date"], form_data["country"], form_data["funding_org"], form_data["funding_amount"]])
+            cursor.execute(project_insert, [form_data["project_name"], form_data["url"], form_data["statement"], form_data["start_date"], form_data["end_date"], form_data["release_date"], form_data["country"], form_data["funding_org"], form_data["funding_amount"]])
             mysql.connection.commit()
         except:
             pass
@@ -483,7 +514,6 @@ def add():
         for key, value in form_data.items():
             if "keyword" in key and value != None:
                 form_keywords.add(value)
-        print(form_keywords)
         #Re-add project_keyword entries
         for i in form_keywords:
             cursor.execute("""SELECT * FROM keywords WHERE keyword_name = %s""", [i])
@@ -501,13 +531,9 @@ def add():
         mysql.connection.commit()
         return redirect("/projects/" + str(project_id))
 
-# NAMES=["abc","abcd","abcde","abcdef"]
-
-# @app.route('/_autocomplete')
-# def autocomplete():
-
 #Keyword Search
 @app.route("/keywords", methods=["GET", "POST"])
+@login_required
 def keywords():
     cursor = mysql.connection.cursor()
     if request.method == "GET":
@@ -533,6 +559,7 @@ def keywords():
 
 #Keyword Profile
 @app.route("/keywords/<keyword>")
+@login_required
 def keyword_profile(keyword):
     cursor = mysql.connection.cursor()
     keyword_query = """SELECT DISTINCT authors.author_id, authors.author_name, COUNT(*) AS count FROM project_authors

@@ -116,9 +116,14 @@
     <div class="form-group">
         <input class="form-control" id="url" name="url" type="text" placeholder="URL" value="{{ project_results['url'] }}" required>
     </div>
+    <h5>Statement</h5>
+    <div class="form-group">
+        <textarea class="form-control" id="statement" name="statement" placeholder="Statement/Abstract" cols="30" rows="5">{{ project_results['statement'] }}</textarea>
+    </div>
+    <h5>Dates</h5>
     <div class="form-group">
         <label for="start_date">Start Date</label>
-        <input class="form-control" id="start_date" name="start_date" type="date" title="Start Date" value="{{ project_results['start_date'] }}">
+        <input class="form-control" id="start_date" name="start_date" type="date" placeholder="Start Date" title="Start Date" value="{{ project_results['start_date'] }}">
     </div>
     <div class="form-group">
         <label for="end_date">End Date</label>

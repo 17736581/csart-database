@@ -39,6 +39,12 @@
                 <b>Release Date:</b> {{ project_results['release_date'] }}
             {% endif %}
     </div>
+    <div class="project-statement">
+        <b>Statement:</b>
+        <p>
+            {{ project_results['statement'] }}
+        </p>
+    </div>
     <div class="project-funding">
         {% if project_results['funding_org'] and project_results['funding_amount'] %}
             <b>Funding Organisation:</b> {{ project_results['funding_org'] }}
