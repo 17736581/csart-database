@@ -33,9 +33,7 @@ mysql = MySQL(app)
 @app.route("/")
 #@login_required
 def hello_world():
-    cursor = mysql.connection.cursor()
-    cursor.execute("""SELECT * FROM Authors""")
-    authors = cursor.fetchall()
+
     return render_template("index.html", authors=authors)
 
 @app.route("/register", methods=["GET", "POST"])
@@ -377,6 +375,12 @@ def author_edit(id):
         #processing the updated author data comes in three parts:
         #updating author table, updating existing other_names, adding new other_names
         form_data = request.form.to_dict()
+        
+        #Strip whitespace from form data
+        for i in form_data:
+            form_data[i] = form_data[i].strip()
+
+        #Convert empty fields into None/Null so as not to insert into database    
         form_data = string_to_null(form_data)
 
         #update author table
@@ -436,6 +440,10 @@ def add():
     if request.method == "POST":
         cursor = mysql.connection.cursor()
         form_data = request.form.to_dict()
+
+        #print("Stripping whitespace from form data...")
+        for i in form_data:
+            form_data[i] = form_data[i].strip()
         
         #Add project to projects table
         try:
