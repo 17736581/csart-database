@@ -21,6 +21,9 @@
             <span><a href="/keywords/{{ keyword['keyword_name'] }}">{{ keyword['keyword_name'] }}</a>{% if not loop.last %},{% endif %}</span>   
         {% endfor %}
     </div>
+    <div class="type">
+        <b>Type: </b>{{ project_results['type_name'] }}
+    </div>
     <div class="project-url">
         <b>URL</b>: <a href="{{ project_results['url'] }}">{{ project_results['url'] }}</a>
     </div>

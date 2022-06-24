@@ -51,6 +51,7 @@
                 {% endif %}
             {% endfor %}
             </p>
+            <p><b>Type: </b>{{ row['type_name'] }}</p>
             <p><b>URL: </b><a href="{{ row['url'] }}">{{ row['url'] }}</a></p>
             {% if row['statement'] !=  '' %}
             <a class="btn btn-link shadow-none" data-toggle="collapse" href="#collapse{{ row['project_id'] }}" aria-expanded="false" aria-controls="collapse{{ row['project_id'] }}">

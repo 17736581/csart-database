@@ -125,10 +125,11 @@ def projects():
         #                 GROUP BY projects.project_id;""")
 
         cursor.execute("""CREATE TEMPORARY TABLE temp_projects 
-                            SELECT projects.project_id, projects.project_name, GROUP_CONCAT(CONCAT(' ', authors.author_name)) author_names, start_date, end_date, release_date, url, projects.statement
+                            SELECT projects.project_id, projects.project_name, GROUP_CONCAT(CONCAT(' ', authors.author_name)) author_names, start_date, end_date, release_date, url, projects.statement, type_name
                             FROM project_authors
                             INNER JOIN projects ON projects.project_id = project_authors.project_id
                             INNER JOIN authors ON authors.author_id = project_authors.author_id
+                            LEFT JOIN types ON types.type_id = projects.type_id
                             GROUP BY projects.project_id;""")
         cursor.execute("""CREATE TEMPORARY TABLE temp_keywords
                             SELECT projects.project_id AS k_project_id, GROUP_CONCAT(CONCAT(' ', keywords.keyword_name)) keyword_names
@@ -180,7 +181,8 @@ def projects():
 def projects_id(id):
     cursor = mysql.connection.cursor()
     project_query = """SELECT * FROM projects
-            WHERE projects.project_id = %s"""
+                    LEFT JOIN types ON types.type_id = projects.type_id
+                    WHERE projects.project_id = %s"""
     cursor.execute(project_query, [id])
     project_results = cursor.fetchone()
     project_results = null_to_string(project_results)
@@ -209,6 +211,7 @@ def projects_edit(id):
     if request.method == "GET":
         #Query project data
         project_query = """SELECT * FROM projects
+                        LEFT JOIN types ON types.type_id = projects.type_id
                         WHERE project_id = %s"""
         cursor.execute(project_query, [id])
         project_results = cursor.fetchone()
@@ -237,7 +240,9 @@ def projects_edit(id):
         #Query all keywords for keyword datalist
         cursor.execute("SELECT keyword_name FROM keywords")
         keyword_list = cursor.fetchall()
-        return render_template("project_edit.html", project_results=project_results, author_results=author_results, author_list=author_list, keyword_results=keyword_results, keyword_list=keyword_list)
+        cursor.execute("SELECT * FROM types")
+        type_list = cursor.fetchall()
+        return render_template("project_edit.html", project_results=project_results, author_results=author_results, author_list=author_list, keyword_results=keyword_results, keyword_list=keyword_list, type_list=type_list)
     
     if request.method == "POST":
         form_data = request.form.to_dict()
@@ -247,6 +252,10 @@ def projects_edit(id):
             form_data[i] = form_data[i].strip()
 
         form_data = string_to_null(form_data)
+
+        #Find type_id from type_name
+        cursor.execute("SELECT type_id FROM types WHERE type_name = %s", [form_data['type_name']])
+        type_id = cursor.fetchone()
 
         #Update projects table
         project_query = """UPDATE projects
@@ -258,10 +267,11 @@ def projects_edit(id):
                                 release_date = %s,
                                 country = %s,
                                 funding_org = %s,
-                                funding_amount = %s
+                                funding_amount = %s,
+                                type_id = %s
                             WHERE project_id = %s"""
         cursor.execute(project_query, [form_data['project_name'], form_data['url'], form_data['statement'], form_data['start_date'], form_data['end_date'], form_data['release_date'],
-                                     form_data['country'], form_data['funding_org'], form_data['funding_amount'], id])
+                                     form_data['country'], form_data['funding_org'], form_data['funding_amount'], type_id['type_id'], id])
         
         # #Retrieve all authors in the form
         #Use a set to only get unique authors (no duplicates)
@@ -454,7 +464,11 @@ def add():
         #Query all keywords for keyword datalist
         cursor.execute("SELECT keyword_name FROM keywords")
         keyword_list = cursor.fetchall()
-        return render_template("add.html", authors=authors, keyword_list=keyword_list)
+
+        #Query all types for type datalist
+        cursor.execute("SELECT * FROM types")
+        type_list = cursor.fetchall()
+        return render_template("add.html", authors=authors, keyword_list=keyword_list, type_list=type_list)
     
     if request.method == "POST":
         cursor = mysql.connection.cursor()
@@ -463,13 +477,18 @@ def add():
         #Strip form data of whitespace
         for i in form_data:
             form_data[i] = form_data[i].strip()
+
+        form_data = string_to_null(form_data)
+
+        #Find type_id from type_name
+        cursor.execute("SELECT type_id FROM types WHERE type_name = %s", [form_data['type_name']])
+        type_id = cursor.fetchone()
         
         #Add project to projects table
         try:
-            project_insert = """INSERT INTO projects(project_name, url, statement, start_date, end_date, release_date, country, funding_org, funding_amount) 
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
-            string_to_null(form_data)
-            cursor.execute(project_insert, [form_data["project_name"], form_data["url"], form_data["statement"], form_data["start_date"], form_data["end_date"], form_data["release_date"], form_data["country"], form_data["funding_org"], form_data["funding_amount"]])
+            project_insert = """INSERT INTO projects(project_name, url, statement, start_date, end_date, release_date, country, funding_org, funding_amount, type_id) 
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+            cursor.execute(project_insert, [form_data["project_name"], form_data["url"], form_data["statement"], form_data["start_date"], form_data["end_date"], form_data["release_date"], form_data["country"], form_data["funding_org"], form_data["funding_amount"], type_id['type_id']])
             mysql.connection.commit()
         except:
             pass

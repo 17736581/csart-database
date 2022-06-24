@@ -95,6 +95,18 @@
         </div>
     </div>
     <br>
+    <!-- Type -->
+    <h5>Type</h5>
+    <div class="form-group">
+        <div class="input-group">
+            <input class="form-control" id="type_name" name="type_name" list="type_list" placeholder="Project Type" type="text">
+            <datalist id="type_list">
+                {% for types in type_list %}
+                    <option value="{{ types['type_name'] }}">{{ types['type_name'] }}</option>
+                {% endfor %}
+            </datalist>
+        </div>
+    </div>
     <!-- URL -->
     <h5>URL</h5>
     <div class="form-group">
