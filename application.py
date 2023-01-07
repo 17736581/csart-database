@@ -13,7 +13,7 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0")
 
 app.config["MYSQL_USER"] = "root"
-app.config["MYSQL_PASSWORD"] = """u1ozP`H+g^A"Ndw"""
+# app.config["MYSQL_PASSWORD"] = """u1ozP`H+g^A"Ndw"""
 app.config["MYSQL_DB"] = "csart_db"
 app.config["MYSQL_CURSORCLASS"] = "DictCursor"
 app.config["JSON_AS_ASCII"] = False
