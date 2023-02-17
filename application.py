@@ -231,7 +231,8 @@ def projects_edit(id):
         author_query = """SELECT author_name, authors.author_id FROM project_authors
                         INNER JOIN projects ON projects.project_id = project_authors.project_id
                         INNER JOIN authors ON authors.author_id = project_authors.author_id
-                        WHERE projects.project_id = %s"""
+                        WHERE projects.project_id = %s
+                        ORDER BY author_order;"""
         cursor.execute(author_query, [id])
         author_results = cursor.fetchall()
 
@@ -257,15 +258,22 @@ def projects_edit(id):
     if request.method == "POST":
         form_data = request.form.to_dict()
 
-        #Strip whitespace from form data
+        #Strip form data of whitespace
         for i in form_data:
             form_data[i] = form_data[i].strip()
 
-        form_data = string_to_null(form_data)
-
         #Find type_id from type_name
         cursor.execute("SELECT type_id FROM types WHERE type_name = %s", [form_data['type_name']])
-        type_id = cursor.fetchone()
+        type_result = cursor.fetchone()
+        if type_result != None:
+            type_id = type_result
+        else:
+            type_id = {"type_id": ""}
+
+        #add type_id to form_data dictionary
+        form_data["type_id"] = type_id["type_id"]
+
+        form_data = string_to_null(form_data)        
 
         #Update projects table
         project_query = """UPDATE projects
@@ -281,7 +289,7 @@ def projects_edit(id):
                                 type_id = %s
                             WHERE project_id = %s"""
         cursor.execute(project_query, [form_data['project_name'], form_data['url'], form_data['statement'], form_data['start_date'], form_data['end_date'], form_data['release_date'],
-                                     form_data['country'], form_data['funding_org'], form_data['funding_amount'], type_id['type_id'], id])
+                                     form_data['country'], form_data['funding_org'], form_data['funding_amount'], form_data['type_id'], id])
         
         # #Retrieve all authors in the form
         form_authors = []
@@ -298,21 +306,20 @@ def projects_edit(id):
 
         #Re-add authors to project_authors
         #Add new authors if they don't exist
-        
         for i in form_authors:
             cursor.execute("""SELECT *, GROUP_CONCAT(CONCAT(' ', other_names.other_name)) other_names FROM authors 
                             LEFT JOIN other_names on other_names.author_id = authors.author_id
                             WHERE author_name = %s OR other_name = %s""", [i, i])
             author_fetch = cursor.fetchall()
-            print(author_fetch)
-            #if author not in database: add new author row, add new project_author row
-            if len(author_fetch) == 0:
-                cursor.execute("""INSERT INTO authors(`author_name`) VALUES (%s)""", [i])
-                cursor.execute("""SELECT LAST_INSERT_ID()""")
-                cursor.execute("""INSERT INTO project_authors VALUES (%s, %s, %s)""", [id, cursor.fetchone()['LAST_INSERT_ID()'], form_authors.index(i)])
-            #if author in database: add new project_author row
-            elif len(author_fetch) == 1:
-                cursor.execute("""INSERT INTO project_authors VALUES (%s, %s, %s)""", [id, author_fetch[0]["author_id"], form_authors.index(i)])
+            if len(author_fetch) == 1:
+                #if author not in database: add new author row, add new project_author row
+                if author_fetch[0]["author_id"] == None:
+                    cursor.execute("""INSERT INTO authors(`author_name`) VALUES (%s)""", [i])
+                    cursor.execute("""SELECT LAST_INSERT_ID()""")
+                    cursor.execute("""INSERT INTO project_authors VALUES (%s, %s, %s)""", [id, cursor.fetchone()['LAST_INSERT_ID()'], form_authors.index(i)])
+                #if author in database: add new project_author row
+                elif author_fetch[0]["author_id"]:
+                    cursor.execute("""INSERT INTO project_authors VALUES (%s, %s, %s)""", [id, author_fetch[0]["author_id"], form_authors.index(i)])
             else:
                 #TODO create redirect for errors
                 print("Duplicate Error: more than one author found")
@@ -377,16 +384,21 @@ def author_profile(id):
     author_results = cursor.fetchone()
     author_results = null_to_string(author_results)
 
-    project_query = """ SELECT *, GROUP_CONCAT(CONCAT(' ', authors.author_name)) authors
-                FROM project_authors
-                INNER JOIN projects ON projects.project_id = project_authors.project_id
-                INNER JOIN authors ON authors.author_id = project_authors.author_id
-                WHERE project_authors.project_id IN
+    cursor.execute("""CREATE TEMPORARY TABLE temp_authors
+                    SELECT project_id, author_order, project_authors.author_id, author_name, email, website, affiliations, statement 
+                    FROM `project_authors` 
+                    JOIN authors on authors.author_id = project_authors.author_id
+                    ORDER BY `project_authors`.`project_id` ASC, `project_authors`.`author_order`;""")
+
+    project_query = """ SELECT *, GROUP_CONCAT(CONCAT(' ', temp_authors.author_name)) authors
+                FROM temp_authors
+                INNER JOIN projects ON projects.project_id = temp_authors.project_id
+                WHERE temp_authors.project_id IN
 	            (SELECT project_authors.project_id FROM project_authors 
 	            INNER JOIN authors ON authors.author_id = project_authors.author_id 
 	            INNER JOIN projects ON projects.project_id = project_authors.project_id 
 	            WHERE authors.author_id = %s)
-                GROUP BY projects.release_date DESC"""
+                GROUP BY projects.release_date DESC;"""
     cursor.execute(project_query, [id])
     project_results = cursor.fetchall()
     return render_template("author_profile.html", author_results=author_results, project_results=project_results)
@@ -492,51 +504,62 @@ def add():
         for i in form_data:
             form_data[i] = form_data[i].strip()
 
-        form_data = string_to_null(form_data)
-
         #Find type_id from type_name
         cursor.execute("SELECT type_id FROM types WHERE type_name = %s", [form_data['type_name']])
-        type_id = cursor.fetchone()
-        
+        type_result = cursor.fetchone()
+        if type_result != None:
+            type_id = type_result
+        else:
+            type_id = {"type_id": ""}
+
+        #add type_id to form_data dictionary
+        form_data["type_id"] = type_id["type_id"]
+
+        form_data = string_to_null(form_data)
+
         #Add project to projects table
         try:
             project_insert = """INSERT INTO projects(project_name, url, statement, start_date, end_date, release_date, country, funding_org, funding_amount, type_id) 
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
-            cursor.execute(project_insert, [form_data["project_name"], form_data["url"], form_data["statement"], form_data["start_date"], form_data["end_date"], form_data["release_date"], form_data["country"], form_data["funding_org"], form_data["funding_amount"], type_id['type_id']])
+            cursor.execute(project_insert, [form_data["project_name"], form_data["url"], form_data["statement"], form_data["start_date"], form_data["end_date"], form_data["release_date"], form_data["country"], form_data["funding_org"], form_data["funding_amount"], form_data["type_id"]])
             mysql.connection.commit()
         except:
+            print("Did not add project")
             pass
             
         #Get the project_id of the project using LAST_INSERT_ID()
         cursor.execute("""SELECT LAST_INSERT_ID()""")
         project_id = cursor.fetchone()['LAST_INSERT_ID()']
 
-        #retrieve all the authors in the form and put them in a new dictionary
+        #retrieve all the authors in the form and put them in a new list
         #remember there is a variable number of authors per project
-        #prevent duplicates; use a set
-        form_authors = set()
+        form_authors = []
         for key, value in form_data.items():
             if "author" in key and value != None:
-                form_authors.add(value)
+                form_authors.append(value)
+        
+        # Remove duplicates by converting to dictionary then converting back to list
+        form_authors = list(dict.fromkeys(form_authors))
 
         #Add authors to author table (if they don't already exist)
         #Also add new row to project_authors containing project_id and author_id for each author
         for i in form_authors:
-            cursor.execute("""SELECT * FROM authors 
+            cursor.execute("""SELECT *, GROUP_CONCAT(CONCAT(' ', other_names.other_name)) other_names FROM authors 
                             LEFT JOIN other_names on other_names.author_id = authors.author_id
                             WHERE author_name = %s OR other_name = %s""", [i, i])
             author_fetch = cursor.fetchall()
-            #if author not in database: add new author row, add new project_author row
-            if len(author_fetch) == 0:
-                cursor.execute("""INSERT INTO authors(`author_name`) VALUES (%s)""", [i])
-                cursor.execute("""SELECT LAST_INSERT_ID()""")
-                cursor.execute("""INSERT INTO project_authors VALUES (%s, %s)""", [project_id, cursor.fetchone()['LAST_INSERT_ID()']])
-            #if author in database: add new project_author row
-            elif len(author_fetch) >= 1:
-                cursor.execute("""INSERT INTO project_authors VALUES (%s, %s)""", [project_id, author_fetch[0]["author_id"]])
+            if len(author_fetch) == 1:
+                #if author not in database: add new author row, add new project_author row
+                if author_fetch[0]["author_id"] == None:
+                    cursor.execute("""INSERT INTO authors(`author_name`) VALUES (%s)""", [i])
+                    cursor.execute("""SELECT LAST_INSERT_ID()""")
+                    cursor.execute("""INSERT INTO project_authors VALUES (%s, %s, %s)""", [project_id, cursor.fetchone()['LAST_INSERT_ID()'], form_authors.index(i)])
+                #if author in database: add new project_author row
+                elif author_fetch[0]["author_id"]:
+                    cursor.execute("""INSERT INTO project_authors VALUES (%s, %s, %s)""", [project_id, author_fetch[0]["author_id"], form_authors.index(i)])
             else:
                 #TODO create redirect for errors
-                print("More than one author found")
+                print("Duplicate Error: more than one author found")
         
         #Add keywords, project_keywords
         form_keywords = set()
