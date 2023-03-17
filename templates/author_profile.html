@@ -1,5 +1,29 @@
 {% extends "layout.html" %}
 
+{% block head %}
+    <script>
+        $(document).ready(function() {
+            $('.author_btn').click(function() {
+                var parent_div = $(this).parent();
+
+                var button_text = $(this).text();
+                var points = parent_div.find("#points");
+                var more_authors = parent_div.find("#more_authors");
+                
+                if(button_text === 'Show Less'){
+                    $(this).html('Show More');
+                    points.show();
+                    more_authors.hide();
+                } else {
+                    $(this).html('Show Less');
+                    points.hide();
+                    more_authors.show();
+                }
+            });
+        });
+    </script>
+{% endblock %}
+
 {% block title %}
     {{ author_results["author_name"] }}
 {% endblock %}
@@ -41,16 +65,23 @@
             <th style="width: 25%">Project Name</th>
             <th style="width: 25%">Authors</th>
             <th style="width: 12%">Release Date</th>
-            <th style="width: 12%">URL</th>
         </tr>
     </thead>
     <tbody>
     {% for row in project_results %}
         <tr>
             <td><a href="/projects/{{ row['project_id'] }}">{{ row["project_name"] }}</a></td>
-            <td>{{ row["authors"] }}</td>
+            {% if row['authors']|length < 300 %}
+                <td>{{ row["authors"] }}</td>
+            {% else %}
+                <td>
+                    {{ row["authors"][:300] }}<span id="points">...</span><span id="more_authors" style="display: none;">{{ row["authors"][300:] }}</span>
+                    <a class="author_btn">
+                        Show More
+                    </a>
+                </td>
+            {% endif %}
             <td>{{ row["release_date"] }}</td>
-            <td><a href="{{ row['url'] }}">{{ row["url"] }}</a></td>
         </tr>
     {% endfor %}
     </tbody>

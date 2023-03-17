@@ -257,7 +257,7 @@ def projects_edit(id):
     
     if request.method == "POST":
         form_data = request.form.to_dict()
-
+        print(form_data['release_date'])
         #Strip form data of whitespace
         for i in form_data:
             form_data[i] = form_data[i].strip()
@@ -398,7 +398,12 @@ def author_profile(id):
 	            INNER JOIN authors ON authors.author_id = project_authors.author_id 
 	            INNER JOIN projects ON projects.project_id = project_authors.project_id 
 	            WHERE authors.author_id = %s)
-                GROUP BY projects.release_date DESC;"""
+                GROUP BY projects.project_id DESC;"""
+
+    # project_query = """SELECT * FROM `project_authors`
+    #                 JOIN projects on projects.project_id = project_authors.project_id
+    #                 WHERE author_id = %s
+    #                 ORDER BY `author_id`  DESC"""
     cursor.execute(project_query, [id])
     project_results = cursor.fetchall()
     return render_template("author_profile.html", author_results=author_results, project_results=project_results)

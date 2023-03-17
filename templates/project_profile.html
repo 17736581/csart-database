@@ -1,5 +1,37 @@
 {% extends "layout.html" %}
 
+{% block head %}
+    <script>
+        $(document).ready(function() {
+            var authors_elem = $("#authors-list");
+            var authors = authors_elem.children();
+            var author_btn = $(".author_btn");
+            console.log(authors);
+
+            if (authors.length > 30) {
+                authors_elem.html(authors.slice(0, 30));
+                authors_elem.append("<span id='points'>...</span>");
+                author_btn.show();
+            }
+
+            $('.author_btn').click(function() {
+                console.log("click");
+                var button_text = $(this).text();
+                
+                
+                if(button_text === 'Show Less'){
+                    authors_elem.html(authors.slice(0, 30));
+                    authors_elem.append("<span id='points'>...</span></br>");
+                    $(this).html('Show More');
+                } else {
+                    authors_elem.html(authors);
+                    $(this).html('Show Less');
+                }
+            });
+        });
+    </script>
+{% endblock %}
+
 {% block title %}
     {{ project_results["project_name"] }}
 {% endblock %}
@@ -10,11 +42,12 @@
 </div>
 <hr>
 <div class="author-container" style="text-align: left;">
-    <div class="authors-list">
+    <div class="authors-list" id="authors-list">
         {% for author in author_results %}
-            <span><a href="/authors/{{ author['author_id'] }}">{{ author['author_name'] }}</a>{% if not loop.last %},&nbsp;{% endif %}</span> 
+            <span><a href="/authors/{{ author['author_id'] }}">{{ author['author_name'] }}</a>{% if not loop.last %},&nbsp;{% endif %}</span>
         {% endfor %}
     </div>
+    <div><a class='author_btn' style="display:none">Show More</a></div>
     <div class="keywords">
         <b>Keywords</b>: 
         {% for keyword in keyword_results %} 

@@ -9,18 +9,30 @@
                 $(this).find("span:last").remove();
             });
 
-            var project_wrapper = $(".project_container");
-            
-            $(project_wrapper).each(function(){
-                $(this).find("span:last").remove();
-            });
-
             $('.btn').click(function() {
                 var text = $(this).text()
                 if(text === 'Hide Summary'){
                     $(this).html('Show Summary');
                 } else {
                     $(this).html('Hide Summary');
+                }
+            });
+
+            $('.author_btn').click(function() {
+                var parent_div = $(this).parent();
+
+                var button_text = $(this).text();
+                var points = parent_div.find("#points");
+                var more_authors = parent_div.find("#more_authors");
+                
+                if(button_text === 'Show Less'){
+                    $(this).html('Show More');
+                    points.show();
+                    more_authors.hide();
+                } else {
+                    $(this).html('Show Less');
+                    points.hide();
+                    more_authors.show();
                 }
             });
         });
@@ -33,7 +45,7 @@
 
 {% block main %}
 
-{% for row in projects%}
+{% for row in projects %}
 <div class="project_container">
     <div class="card" style="text-align:left;">
         <h5 class="card-header"><a href="/projects/{{ row['project_id'] }}">{{ row["project_name"] }}</a></h5>
@@ -43,13 +55,26 @@
             {% elif row['start_date'] != '' %}
                 <p><b>Dates: </b>{{ row['start_date'] }} - {{ row['end_date'] }}</p>
             {% endif %}
-            <p class="card-text"><b>Contributors:</b>{{ row["author_names"] }}</p>
+            {% if row['author_names']|length < 400 %}
+                <p class="card-text"><b>Contributors:</b>{{ row["author_names"] }}</p>
+            {% else %}
+                <p class="card-text">
+                    <b>Contributors:</b>
+                    {{ row["author_names"][:400] }}<span id="points">...</span><span class="more_authors" id="more_authors" style="display: none;">{{ row["author_names"][400:] }}</span>
+                    <br>
+                    <a class="author_btn">
+                        Show More
+                    </a>
+                </p>
+            {% endif %}
             <p><b>Keywords:</b>
-            {% for keyword in keywords %}
-                {% if keyword['project_id'] == row['project_id'] %}
-                    <a href="/keywords/{{ keyword['keyword_name'] }}">{{ keyword['keyword_name'] }}</a><span id="comma">,</span>
-                {% endif %}
-            {% endfor %}
+                <span class="keyword_container">
+                    {% for keyword in keywords %}
+                        {% if keyword['project_id'] == row['project_id'] %}
+                            <a href="/keywords/{{ keyword['keyword_name'] }}">{{ keyword['keyword_name'] }}</a><span id="comma">,</span>
+                        {% endif %}
+                    {% endfor %}
+                </span>
             </p>
             <p><b>Type: </b>{{ row['type_name'] }}</p>
             <p><b>URL: </b><a href="{{ row['url'] }}">{{ row['url'] }}</a></p>
@@ -58,9 +83,9 @@
                 Show Summary
             </a>
             <div class="collapse" id="collapse{{ row['project_id'] }}">
-            <p>
-                {{ row['statement'] }}
-            </p>
+                <p>
+                    {{ row['statement'] }}
+                </p>
             </div>
             {% endif %}
         </div>
