@@ -50,6 +50,7 @@
     <div class="card" style="text-align:left;">
         <h5 class="card-header"><a href="/projects/{{ row['project_id'] }}">{{ row["project_name"] }}</a></h5>
         <div class="card-body">
+            <p><b>Year: </b>{{ row['year'] }}</p>
             {% if row['release_date'] != '' %}
                 <p><b>Release Date: </b>{{ row['release_date'] }}</p>
             {% elif row['start_date'] != '' %}

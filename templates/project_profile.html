@@ -61,6 +61,8 @@
         <b>URL</b>: <a href="{{ project_results['url'] }}">{{ project_results['url'] }}</a>
     </div>
     <div class="project-dates">
+        <b>Year:</b>
+        {{ project_results['year'] }}
         {% if project_results['release_date'] %}
                 <b>Date:</b>
                 {{ project_results['release_date'] }}
@@ -68,11 +70,6 @@
             {% elif project_results['start_date'] or project_results['end_date'] %}
                 <b>Start Date:</b> {{ project_results['start_date'] }}
                 <b>End Date:</b> {{ project_results['end_date'] }}
-
-            {% else %}
-                <b>Start Date:</b> {{ project_results['start_date'] }}
-                <b>End Date:</b> {{ project_results['end_date'] }}
-                <b>Release Date:</b> {{ project_results['release_date'] }}
             {% endif %}
     </div>
     <div class="project-statement">
