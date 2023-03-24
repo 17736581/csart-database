@@ -23,6 +23,11 @@ git status #get the current status of the local repository relative to github's
 git checkout . #don't commit changes and revert back to repository
 
 
+git stash # temporarily shelve changes that can be reapplied later. This is mainly for saving different configurations between local and remote. Use before git pull. 
+
+git stash pop # Use after git pull to restore the changes.
+
+
 git branch #list all branches
 
 git checkout -b <branch name> #create new branch and switch to it
