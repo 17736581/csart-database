@@ -135,7 +135,7 @@ def projects():
                             ORDER BY `project_authors`.`project_id` ASC, `project_authors`.`author_order`;""")
         
         cursor.execute("""CREATE TEMPORARY TABLE temp_projects 
-                            SELECT projects.project_id, projects.project_name, GROUP_CONCAT(CONCAT(' ', temp_authors.author_name)) author_names, start_date, end_date, release_date, url, projects.statement, type_name, year
+                            SELECT projects.project_id, projects.project_name, GROUP_CONCAT(CONCAT(' ', temp_authors.author_name)) author_names, start_date, end_date, release_date, url, projects.statement, type_name, year, primary_tag, secondary_tag
                             FROM temp_authors
                             INNER JOIN projects ON projects.project_id = temp_authors.project_id
                             LEFT JOIN types ON types.type_id = projects.type_id

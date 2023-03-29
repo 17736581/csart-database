@@ -48,15 +48,31 @@
         {% endfor %}
     </div>
     <div><a class='author_btn' style="display:none">Show More</a></div>
-    <div class="keywords">
-        <b>Keywords</b>: 
-        {% for keyword in keyword_results %} 
-            <span><a href="/keywords/{{ keyword['keyword_name'] }}">{{ keyword['keyword_name'] }}</a>{% if not loop.last %},{% endif %}</span>   
-        {% endfor %}
-    </div>
-    <div class="type">
-        <b>Type: </b>{{ project_results['type_name'] }}
-    </div>
+    {% if project_results["primary_tag"] %}
+        <div class="primary_tag">
+            <b>Primary Tag:</b>
+            <span>{{project_results["primary_tag"]}}</span>
+        </div>
+    {% endif %}
+    {% if project_results["secondary_tag"] %}
+        <div class="secondary_tag">
+            <b>Secondary Tag:</b>
+            <span>{{project_results["secondary_tag"]}}</span>
+        </div>
+    {% endif %}
+    {% if keyword_results %}
+        <div class="keywords">
+            <b>Keywords</b>: 
+            {% for keyword in keyword_results %} 
+                <span><a href="/keywords/{{ keyword['keyword_name'] }}">{{ keyword['keyword_name'] }}</a>{% if not loop.last %},{% endif %}</span>   
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% if project_results["type_name"] %}
+        <div class="type">
+            <b>Type: </b>{{ project_results['type_name'] }}
+        </div>
+    {% endif %}
     <div class="project-url">
         <b>URL</b>: <a href="{{ project_results['url'] }}">{{ project_results['url'] }}</a>
     </div>

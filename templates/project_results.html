@@ -50,7 +50,9 @@
     <div class="card" style="text-align:left;">
         <h5 class="card-header"><a href="/projects/{{ row['project_id'] }}">{{ row["project_name"] }}</a></h5>
         <div class="card-body">
-            <p><b>Year: </b>{{ row['year'] }}</p>
+            {% if row['year'] != 0 %}
+                <p><b>Year: </b>{{ row['year'] }}</p>
+            {% endif %}
             {% if row['release_date'] != '' %}
                 <p><b>Release Date: </b>{{ row['release_date'] }}</p>
             {% elif row['start_date'] != '' %}
@@ -68,16 +70,36 @@
                     </a>
                 </p>
             {% endif %}
-            <p><b>Keywords:</b>
-                <span class="keyword_container">
-                    {% for keyword in keywords %}
-                        {% if keyword['project_id'] == row['project_id'] %}
-                            <a href="/keywords/{{ keyword['keyword_name'] }}">{{ keyword['keyword_name'] }}</a><span id="comma">,</span>
-                        {% endif %}
-                    {% endfor %}
-                </span>
-            </p>
+            {% if row["primary_tag"] != '' %}
+                <p>
+                    <b>Primary Tag:</b>
+                    {{row ["primary_tag"]}}
+                    <br>
+                </p>
+            {% endif %}
+            {% if row["secondary_tag"] != '' %}
+                <p>
+                    <b>Secondary Tag:</b>
+                    {{row ["secondary_tag"]}}
+                    <br>
+                </p>
+            {% endif %}
+            
+            {% if row["k_project_id"] %}
+                <p><b>Keywords:</b>
+                    <span class="keyword_container">
+                        {% for keyword in keywords %}
+                            {% if keyword['project_id'] == row['project_id'] %}
+                                <a href="/keywords/{{ keyword['keyword_name'] }}">{{ keyword['keyword_name'] }}</a><span id="comma">,</span>
+                            {% endif %}
+                        {% endfor %}
+                    </span>
+                </p>
+            {% endif %}
+
+            {% if row['type_name'] %}
             <p><b>Type: </b>{{ row['type_name'] }}</p>
+            {% endif %}
             <p><b>URL: </b><a href="{{ row['url'] }}">{{ row['url'] }}</a></p>
             {% if row['statement'] !=  '' %}
             <a class="btn btn-link shadow-none" data-toggle="collapse" href="#collapse{{ row['project_id'] }}" aria-expanded="false" aria-controls="collapse{{ row['project_id'] }}">
