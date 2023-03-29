@@ -53,6 +53,7 @@
             {% if row['year'] != 0 %}
                 <p><b>Year: </b>{{ row['year'] }}</p>
             {% endif %}
+            
             {% if row['release_date'] != '' %}
                 <p><b>Release Date: </b>{{ row['release_date'] }}</p>
             {% elif row['start_date'] != '' %}
@@ -70,6 +71,7 @@
                     </a>
                 </p>
             {% endif %}
+
             {% if row["primary_tag"] != '' %}
                 <p>
                     <b>Primary Tag:</b>
@@ -77,6 +79,7 @@
                     <br>
                 </p>
             {% endif %}
+
             {% if row["secondary_tag"] != '' %}
                 <p>
                     <b>Secondary Tag:</b>
@@ -100,7 +103,9 @@
             {% if row['type_name'] %}
             <p><b>Type: </b>{{ row['type_name'] }}</p>
             {% endif %}
-            <p><b>URL: </b><a href="{{ row['url'] }}">{{ row['url'] }}</a></p>
+            
+            <p><b>URL: </b><a href="{{ row['url'] }}" target="_blank" rel="noopener noreferrer">{{ row['url'] }}</a></p>
+            
             {% if row['statement'] !=  '' %}
             <a class="btn btn-link shadow-none" data-toggle="collapse" href="#collapse{{ row['project_id'] }}" aria-expanded="false" aria-controls="collapse{{ row['project_id'] }}">
                 Show Summary
