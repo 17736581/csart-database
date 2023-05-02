@@ -6,7 +6,6 @@
             var authors_elem = $("#authors-list");
             var authors = authors_elem.children();
             var author_btn = $(".author_btn");
-            console.log(authors);
 
             if (authors.length > 30) {
                 authors_elem.html(authors.slice(0, 30));
@@ -15,9 +14,7 @@
             }
 
             $('.author_btn').click(function() {
-                console.log("click");
                 var button_text = $(this).text();
-                
                 
                 if(button_text === 'Show Less'){
                     authors_elem.html(authors.slice(0, 30));
@@ -26,6 +23,23 @@
                 } else {
                     authors_elem.html(authors);
                     $(this).html('Show Less');
+                }
+            });
+
+            $("#delete_project").click(function(){
+                if (confirm("Delete project?")) {
+                    $.ajax({
+                        method: "DELETE",
+                        url: "/projects/{{ project_results['project_id'] }}",
+                        
+                        success: function(response){
+                            console.log(response);
+                            window.location.replace("/projects")
+                        },
+                        error: function(error){
+                            console.log(error);
+                        } 
+                    })
                 }
             });
         });
@@ -103,5 +117,7 @@
 </div>
 
 <a href="/projects/{{ project_results['project_id'] }}/edit"><button class="btn btn-primary">Edit Project</button></a>
+
+<a><button class="btn btn-danger" id="delete_project">Delete Project</button></a>
 
 {% endblock %}

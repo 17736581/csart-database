@@ -33,7 +33,7 @@ mysql = MySQL(app)
 @app.route("/")
 @login_required
 def hello_world():
-    return render_template("index.html", authors=authors)
+    return render_template("index.html")
 
 # @app.route("/register", methods=["GET", "POST"])
 # def register():
@@ -183,7 +183,70 @@ def projects():
                         INNER JOIN projects ON projects.project_id = project_keywords.project_id""")
         keywords = cursor.fetchall()
 
-        return render_template("project_results.html", projects=projects, keywords=keywords)
+        return render_template("project_results.html", projects=projects, keywords=keywords, search=search)
+
+@app.route("/projects/search/<project_name>" , defaults={"keyword": None})
+@app.route("/projects/search/<project_name>/<keyword>")
+@login_required
+def projects_search(project_name, keyword):
+    cursor = mysql.connection.cursor()
+
+    cursor.execute("""CREATE TEMPORARY TABLE temp_authors
+                        SELECT project_id, author_order, project_authors.author_id, author_name, email, website, affiliations, statement 
+                        FROM `project_authors` 
+                        JOIN authors on authors.author_id = project_authors.author_id
+                        ORDER BY `project_authors`.`project_id` ASC, `project_authors`.`author_order`;""")
+    
+    cursor.execute("""CREATE TEMPORARY TABLE temp_projects 
+                        SELECT projects.project_id, projects.project_name, GROUP_CONCAT(CONCAT(' ', temp_authors.author_name)) author_names, start_date, end_date, release_date, url, projects.statement, type_name, year, primary_tag, secondary_tag
+                        FROM temp_authors
+                        INNER JOIN projects ON projects.project_id = temp_authors.project_id
+                        LEFT JOIN types ON types.type_id = projects.type_id
+                        GROUP BY projects.project_id;""")
+    cursor.execute("""CREATE TEMPORARY TABLE temp_keywords
+                        SELECT projects.project_id AS k_project_id, GROUP_CONCAT(CONCAT(' ', keywords.keyword_name)) keyword_names
+                        FROM project_keywords
+                        INNER JOIN keywords ON keywords.keyword_id = project_keywords.keyword_id
+                        INNER JOIN projects ON projects.project_id = project_keywords.project_id
+                        GROUP BY projects.project_id;""")
+    
+    #Multiple possible searches based on whether project_name and keyword fields are used
+    if project_name != None and keyword != None:            
+        cursor.execute("""SELECT *
+                        FROM temp_projects
+                        LEFT JOIN temp_keywords ON temp_keywords.k_project_id = temp_projects.project_id
+                        WHERE project_name LIKE %s AND keyword_names LIKE %s
+                        ORDER BY COALESCE(release_date, end_date, start_date) DESC;""", ["%"+project_name+"%", "%"+keyword+"%"]
+                        )
+    elif project_name != None and keyword == None:
+        cursor.execute("""SELECT *
+                        FROM temp_projects
+                        LEFT JOIN temp_keywords ON temp_keywords.k_project_id = temp_projects.project_id
+                        WHERE project_name LIKE %s
+                        ORDER BY COALESCE(release_date, end_date, start_date) DESC;""", ["%"+project_name+"%"])
+    elif project_name == None and keyword != None:
+        cursor.execute("""SELECT *
+                        FROM temp_projects
+                        LEFT JOIN temp_keywords ON temp_keywords.k_project_id = temp_projects.project_id
+                        WHERE keyword_names LIKE %s
+                        ORDER BY COALESCE(release_date, end_date, start_date) DESC;""", ["%"+keyword+"%"])
+    else:
+        cursor.execute("""SELECT *
+                        FROM temp_projects
+                        LEFT JOIN temp_keywords ON temp_keywords.k_project_id = temp_projects.project_id
+                        ORDER BY COALESCE(release_date, end_date, start_date) DESC;""")
+
+    projects = cursor.fetchall()
+    projects = null_to_string(projects)
+
+    #Get keywords as a list to create links for keywords
+    cursor.execute("""SELECT projects.project_id, keywords.keyword_name
+                    FROM project_keywords
+                    INNER JOIN keywords ON keywords.keyword_id = project_keywords.keyword_id
+                    INNER JOIN projects ON projects.project_id = project_keywords.project_id""")
+    keywords = cursor.fetchall()
+
+    return render_template("project_results.html", projects=projects, keywords=keywords)
 
 @app.route("/projects/<id>")
 @login_required
@@ -350,6 +413,28 @@ def projects_edit(id):
 
         mysql.connection.commit()
         return redirect(f"/projects/{id}")
+    
+# route to delete a project
+@app.route("/projects/<id>", methods=["DELETE"])
+@login_required
+def projects_delete(id):
+    # cursor = mysql.connection.cursor()
+
+    # project_authors_del_query = """DELETE FROM project_authors WHERE project_id = %s"""
+    # cursor.execute(project_authors_del_query, [id])
+    # mysql.connection.commit()
+
+    # project_keywords_del_query = """DELETE FROM project_keywords WHERE project_id = %s"""
+    # cursor.execute(project_keywords_del_query, [id])
+    # mysql.connection.commit()
+
+    # project_del_query = """DELETE FROM projects WHERE project_id = %s"""
+    # cursor.execute(project_del_query, [id])
+    # mysql.connection.commit()
+
+    # cursor.close()
+    return f"Deleted Record of ID: {id}"
+
 
 # route to search authors
 @app.route("/authors", methods=["GET", "POST"])
@@ -363,14 +448,16 @@ def authors():
         author = request.form.get("author_name")
         query = """SELECT authors.author_id, author_name, website, affiliations, GROUP_CONCAT(CONCAT('\n', other_names.other_name)) other_name FROM authors 
                 LEFT JOIN other_names ON other_names.author_id = authors.author_id
-                WHERE author_name LIKE %s
+                WHERE author_name LIKE %s OR other_name LIKE %s
                 GROUP BY author_name"""
-        cursor.execute(query, ["%"+author+"%"])
+        cursor.execute(query, ["%"+author+"%", "%"+author+"%"])
         author_results = cursor.fetchall()
         author_results = null_to_string(author_results)
 
-
-        return render_template("author_results.html", author_results=author_results)
+        if len(author_results) == 1:
+            return redirect(f"/authors/{author_results[0]['author_id']}")
+        else:
+            return render_template("author_results.html", author_results=author_results)
     
 #author profile page by id
 @app.route("/authors/<id>/")
