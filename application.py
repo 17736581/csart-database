@@ -9,7 +9,7 @@ from flask import Flask, render_template, request, jsonify, session, redirect
 from flask_mysqldb import MySQL
 from werkzeug.security import check_password_hash, generate_password_hash
 from helpers import login_required, null_to_string, string_to_null
-import csv, os
+import json
 
 app = Flask(__name__)
 
@@ -182,8 +182,8 @@ def projects():
                         INNER JOIN keywords ON keywords.keyword_id = project_keywords.keyword_id
                         INNER JOIN projects ON projects.project_id = project_keywords.project_id""")
         keywords = cursor.fetchall()
-
-        return render_template("project_results.html", projects=projects, keywords=keywords, search=search)
+        data = [1, 'foo']
+        return render_template("project_results.html", projects=projects, keywords=keywords, search=search, jsprojects=json.dumps(data))
 
 @app.route("/projects/search/<project_name>" , defaults={"keyword": None})
 @app.route("/projects/search/<project_name>/<keyword>")
@@ -320,7 +320,6 @@ def projects_edit(id):
     
     if request.method == "POST":
         form_data = request.form.to_dict()
-        print(form_data['release_date'])
         #Strip form data of whitespace
         for i in form_data:
             form_data[i] = form_data[i].strip()
@@ -342,17 +341,48 @@ def projects_edit(id):
         project_query = """UPDATE projects
                             SET project_name = %s,
                                 url = %s,
+                                doi = %s,
                                 statement = %s,
+                                year = %s,
                                 start_date = %s,
                                 end_date = %s,
                                 release_date = %s,
                                 country = %s,
                                 funding_org = %s,
                                 funding_amount = %s,
-                                type_id = %s
+                                type_id = %s,
+                                cited_by = %s,
+                                journal = %s,
+                                volume = %s,
+                                issue = %s, 
+                                pages = %s,
+                                publisher = %s,
+                                project_lead = %s,
+                                primary_tag = %s,
+                                secondary_tag = %s
                             WHERE project_id = %s"""
-        cursor.execute(project_query, [form_data['project_name'], form_data['url'], form_data['statement'], form_data['start_date'], form_data['end_date'], form_data['release_date'],
-                                     form_data['country'], form_data['funding_org'], form_data['funding_amount'], form_data['type_id'], id])
+        cursor.execute(project_query, [form_data['project_name'], 
+                                       form_data['url'], 
+                                       form_data['doi'],
+                                       form_data['statement'], 
+                                       form_data['year'],
+                                       form_data['start_date'], 
+                                       form_data['end_date'], 
+                                       form_data['release_date'],
+                                       form_data['country'], 
+                                       form_data['funding_org'], 
+                                       form_data['funding_amount'], 
+                                       form_data['type_id'],
+                                       form_data['cited_by'],
+                                       form_data['journal'],
+                                       form_data['volume'],
+                                       form_data['issue'],
+                                       form_data['pages'],
+                                       form_data['publisher'],
+                                       form_data['project_lead'],
+                                       form_data['primary_tag'],
+                                       form_data['secondary_tag'],
+                                       id])
         
         # #Retrieve all authors in the form
         form_authors = []

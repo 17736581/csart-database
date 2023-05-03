@@ -45,9 +45,10 @@
 
 {% block main %}
 
-{% if not projects %}
-    <p>No project found</p>
-{% endif %}
+<div>
+    <h3>Results for '{{search['project_name']}}': {{ projects|length }}</h3>
+    <br>
+</div>
 
 {% for row in projects %}
 <div class="project_container">

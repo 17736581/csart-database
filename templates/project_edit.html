@@ -86,6 +86,10 @@
             </div>
         </div>
     </div>
+    <h5>Project Lead</h5>
+    <div class="form-group">
+        <input class="form-control" id="project_lead" name="project_lead" type="text" placeholder="Project Lead" value="{{ project_results['project_lead'] }}">
+    </div>
     <h5>Keywords</h5>
     <div class="form-group" id="keyword_container">
         <!-- loop through exisiting keywords -->
@@ -127,11 +131,19 @@
     <div class="form-group">
         <input class="form-control" id="url" name="url" type="text" placeholder="URL" value="{{ project_results['url'] }}" required>
     </div>
+    <h5>DOI</h5>
+    <div class="form-group">
+        <input class="form-control" id="doi" name="doi" type="text" placeholder="DOI" value="{{ project_results['doi'] }}">
+    </div>
     <h5>Statement</h5>
     <div class="form-group">
         <textarea class="form-control" id="statement" name="statement" placeholder="Statement/Abstract" cols="30" rows="5">{{ project_results['statement'] }}</textarea>
     </div>
     <h5>Dates</h5>
+    <div class="form-group">
+        <label for="year">Year</label>
+        <input class="form-control" id="year" name="year" type="number" min="1900" max="2099" step="1" placeholder="Year" value="{{ project_results['year'] }}">
+    </div>
     <div class="form-group">
         <label for="start_date">Start Date</label>
         <input class="form-control" id="start_date" name="start_date" type="date" placeholder="Start Date" title="Start Date" value="{{ project_results['start_date'] }}">
@@ -155,6 +167,40 @@
     </div>
     <div class="form-group">
         <input class="form-control" id="funding_amount" name="funding_amount" type="number" placeholder="Funding Amount" value="{{ project_results['funding_amount'] }}">
+    </div>
+    <h5>Journal</h5>
+    <div class="form-group">
+        <label for="journal">Journal Name</label>
+        <input class="form-control" id="journal" name="journal" type="text" placeholder="Journal" value="{{ project_results['journal'] }}">
+    </div>
+    <div class="form-group">
+        <label for="publisher">Publisher</label>
+        <input class="form-control" id="publisher" name="publisher" type="text" placeholder="Publisher" value="{{ project_results['publisher'] }}">
+    </div>
+    <div class="form-group">
+        <label for="volume">Volume</label>
+        <input class="form-control" id="volume" name="volume" type="text" placeholder="Volume" value="{{ project_results['volume'] }}">
+    </div>
+    <div class="form-group">
+        <label for="issue">Issue</label>
+        <input class="form-control" id="issue" name="issue" type="text" placeholder="Issue" value="{{ project_results['issue'] }}">
+    </div>
+    <div class="form-group">
+        <label for="pages">Pages</label>
+        <input class="form-control" id="pages" name="pages" type="text" placeholder="Pages" value="{{ project_results['pages'] }}">
+    </div>
+    <div class="form-group">
+        <label for="cited_by">Cited By</label>
+        <input class="form-control" id="cited_by" name="cited_by" type="number" placeholder="Number of Citations" value="{{ project_results['cited_by'] }}">
+    </div>
+    <h5>Tags</h5>
+    <div class="form-group">
+        <label for="primary_tag">Primary Tag</label>
+        <input class="form-control" id="primary_tag" name="primary_tag" type="text" placeholder="Primary Tag" value="{{ project_results['primary_tag'] }}">
+    </div>
+    <div class="form-group">
+        <label for="secondary_tag">Secondary Tag</label>
+        <input class="form-control" id="secondary_tag" name="secondary_tag" type="text" placeholder="Secondary Tag" value="{{ project_results['secondary_tag'] }}">
     </div>
     <button type="submit" class="btn btn-primary" formaction="/projects/{{ project_results['project_id'] }}/edit">Submit</button>
     <button type="button" class="btn btn-secondary" onclick="window.history.back();">Cancel</button>
