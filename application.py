@@ -642,9 +642,29 @@ def add():
 
         #Add project to projects table
         try:
-            project_insert = """INSERT INTO projects(project_name, url, statement, start_date, end_date, release_date, country, funding_org, funding_amount, type_id) 
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
-            cursor.execute(project_insert, [form_data["project_name"], form_data["url"], form_data["statement"], form_data["start_date"], form_data["end_date"], form_data["release_date"], form_data["country"], form_data["funding_org"], form_data["funding_amount"], form_data["type_id"]])
+            project_insert = """INSERT INTO projects(project_name, url, doi, statement, year, start_date, end_date, release_date, country, funding_org, funding_amount, type_id, cited_by, journal, volume, issue, pages, publisher, project_lead, primary_tag, secondary_tag) 
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+            cursor.execute(project_insert, [form_data['project_name'], 
+                                       form_data['url'], 
+                                       form_data['doi'],
+                                       form_data['statement'], 
+                                       form_data['year'],
+                                       form_data['start_date'], 
+                                       form_data['end_date'], 
+                                       form_data['release_date'],
+                                       form_data['country'], 
+                                       form_data['funding_org'], 
+                                       form_data['funding_amount'], 
+                                       form_data['type_id'],
+                                       form_data['cited_by'],
+                                       form_data['journal'],
+                                       form_data['volume'],
+                                       form_data['issue'],
+                                       form_data['pages'],
+                                       form_data['publisher'],
+                                       form_data['project_lead'],
+                                       form_data['primary_tag'],
+                                       form_data['secondary_tag']])
             mysql.connection.commit()
         except:
             print("Did not add project")

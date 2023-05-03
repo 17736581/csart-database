@@ -77,6 +77,11 @@
         </div>
     </div>
     <br>
+    <h5>Project Lead</h5>
+    <div class="form-group">
+        <input class="form-control" id="project_lead" name="project_lead" type="text" placeholder="Project Lead">
+    </div>
+    <br>
     <!-- Keywords -->
     <h5>Keywords</h5>
     <div class="form-group" id="keyword_container">
@@ -112,6 +117,10 @@
     <div class="form-group">
         <input class="form-control" id="url" name="url" type="text" placeholder="URL" required>
     </div>
+    <h5>DOI</h5>
+    <div class="form-group">
+        <input class="form-control" id="doi" name="doi" type="text" placeholder="DOI">
+    </div>
     <!-- Statement -->
     <h5>Statement</h5>
     <div class="form-group">
@@ -119,6 +128,10 @@
     </div>
     <!-- Dates -->
     <h5>Dates</h5>
+    <div class="form-group">
+        <label for="year">Year</label>
+        <input class="form-control" id="year" name="year" type="number" min="1900" max="2099" step="1" placeholder="Year">
+    </div>
     <div class="form-group">
         <label for="start_date">Start Date</label>
         <input class="form-control" id="start_date" name="start_date" type="date" title="Start Date">
@@ -145,6 +158,40 @@
     </div>
     <div class="form-group">
         <input class="form-control" id="funding_amount" name="funding_amount" type="number" placeholder="Funding Amount">
+    </div>
+    <h5>Journal</h5>
+    <div class="form-group">
+        <label for="journal">Journal Name</label>
+        <input class="form-control" id="journal" name="journal" type="text" placeholder="Journal">
+    </div>
+    <div class="form-group">
+        <label for="publisher">Publisher</label>
+        <input class="form-control" id="publisher" name="publisher" type="text" placeholder="Publisher">
+    </div>
+    <div class="form-group">
+        <label for="volume">Volume</label>
+        <input class="form-control" id="volume" name="volume" type="text" placeholder="Volume">
+    </div>
+    <div class="form-group">
+        <label for="issue">Issue</label>
+        <input class="form-control" id="issue" name="issue" type="text" placeholder="Issue">
+    </div>
+    <div class="form-group">
+        <label for="pages">Pages</label>
+        <input class="form-control" id="pages" name="pages" type="text" placeholder="Pages">
+    </div>
+    <div class="form-group">
+        <label for="cited_by">Cited By</label>
+        <input class="form-control" id="cited_by" name="cited_by" type="number" placeholder="Number of Citations">
+    </div>
+    <h5>Tags</h5>
+    <div class="form-group">
+        <label for="primary_tag">Primary Tag</label>
+        <input class="form-control" id="primary_tag" name="primary_tag" type="text" placeholder="Primary Tag">
+    </div>
+    <div class="form-group">
+        <label for="secondary_tag">Secondary Tag</label>
+        <input class="form-control" id="secondary_tag" name="secondary_tag" type="text" placeholder="Secondary Tag">
     </div>
     <button type="submit" class="btn btn-primary">Submit</button>
 </form>
