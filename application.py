@@ -108,82 +108,88 @@ def projects():
     if request.method == "POST":
         cursor = mysql.connection.cursor()
         search = request.form.to_dict()
-        string_to_null(search)
 
         project_name = search['project_name']
         keyword = search['keyword']
+        author = search["author"]
 
-        # cursor.execute("CREATE TEMPORARY TABLE temporary_Data (project_id INT(11), project_name VARCHAR(255), author_names varchar(1000));")
-        # cursor.execute("""INSERT INTO temporary_Data (`project_id`, `project_name`, `author_names`) 
-        #                 SELECT projects.project_id, projects.project_name, GROUP_CONCAT(CONCAT(' ', authors.author_name)) author_names
-        #                 FROM project_authors
-        #                 INNER JOIN projects ON projects.project_id = project_authors.project_id
-        #                 INNER JOIN authors ON authors.author_id = project_authors.author_id
-        #                 GROUP BY projects.project_id;""")
-        # cursor.execute("CREATE TEMPORARY TABLE temp_keywords (project_id INT(11), keyword_names varchar(1000));")
-        # cursor.execute("""INSERT INTO temp_keywords (`project_id`, `keyword_names`)
-        #                 SELECT projects.project_id, GROUP_CONCAT(CONCAT(' ', keywords.keyword_name)) keyword_names
-        #                 FROM project_keywords
-        #                 INNER JOIN keywords ON keywords.keyword_id = project_keywords.keyword_id
-        #                 INNER JOIN projects ON projects.project_id = project_keywords.project_id
-        #                 GROUP BY projects.project_id;""")
-
-        cursor.execute("""CREATE TEMPORARY TABLE temp_authors
-	                        SELECT project_id, author_order, project_authors.author_id, author_name, email, website, affiliations, statement 
-                            FROM `project_authors` 
-                            JOIN authors on authors.author_id = project_authors.author_id
-                            ORDER BY `project_authors`.`project_id` ASC, `project_authors`.`author_order`;""")
+        # If keyword not included in search
+        if not keyword:
+            author_query = """SELECT DISTINCT *, 
+                                                GROUP_CONCAT(DISTINCT a.author_name ORDER BY pa.author_order SEPARATOR ', ') AS author_names, 
+                                                GROUP_CONCAT(DISTINCT k.keyword_name SEPARATOR ', ') as keyword_names
+                                FROM projects p
+                                JOIN project_authors pa ON p.project_id = pa.project_id
+                                JOIN authors a ON pa.author_id = a.author_id
+                                LEFT JOIN project_keywords p_k ON p_k.project_id = p.project_id
+                                LEFT JOIN keywords k ON k.keyword_id = p_k.keyword_id
+                                WHERE (
+                                    p.project_id IN (
+                                        SELECT project_id
+                                        FROM project_authors
+                                        WHERE project_name LIKE %s
+                                        AND project_authors.author_id IN (
+                                            SELECT a.author_id
+                                            FROM authors a
+                                            LEFT JOIN other_names ON a.author_id = other_names.author_id
+                                            WHERE a.author_name LIKE %s OR other_names.other_name LIKE %s
+                                        )
+                                    )
+                                )
+                                GROUP BY p.project_name
+                                ORDER BY COALESCE(year, release_date, end_date, start_date) DESC;"""
+            
+            cursor.execute(author_query, ["%"+project_name+"%","%"+author+"%", "%"+author+"%"])
+            projects = cursor.fetchall()
+            projects = null_to_string(projects)
+            
+            # Convert keyword names from concatenated string list to actual list
+            for i in projects:
+                i['keyword_names'] = i['keyword_names'].split(', ')
+            
+            return render_template("project_results.html", projects=projects, search=search)
         
-        cursor.execute("""CREATE TEMPORARY TABLE temp_projects 
-                            SELECT projects.project_id, projects.project_name, GROUP_CONCAT(CONCAT(' ', temp_authors.author_name)) author_names, start_date, end_date, release_date, url, projects.statement, type_name, year, primary_tag, secondary_tag
-                            FROM temp_authors
-                            INNER JOIN projects ON projects.project_id = temp_authors.project_id
-                            LEFT JOIN types ON types.type_id = projects.type_id
-                            GROUP BY projects.project_id;""")
-        cursor.execute("""CREATE TEMPORARY TABLE temp_keywords
-                            SELECT projects.project_id AS k_project_id, GROUP_CONCAT(CONCAT(' ', keywords.keyword_name)) keyword_names
-                            FROM project_keywords
-                            INNER JOIN keywords ON keywords.keyword_id = project_keywords.keyword_id
-                            INNER JOIN projects ON projects.project_id = project_keywords.project_id
-                            GROUP BY projects.project_id;""")
-        
-        #Multiple possible searches based on whether project_name and keyword fields are used
-        if project_name != None and keyword != None:            
-            cursor.execute("""SELECT *
-                            FROM temp_projects
-                            LEFT JOIN temp_keywords ON temp_keywords.k_project_id = temp_projects.project_id
-                            WHERE project_name LIKE %s AND keyword_names LIKE %s
-                            ORDER BY COALESCE(release_date, end_date, start_date) DESC;""", ["%"+project_name+"%", "%"+keyword+"%"]
-                            )
-        elif project_name != None and keyword == None:
-            cursor.execute("""SELECT *
-                            FROM temp_projects
-                            LEFT JOIN temp_keywords ON temp_keywords.k_project_id = temp_projects.project_id
-                            WHERE project_name LIKE %s
-                            ORDER BY COALESCE(release_date, end_date, start_date) DESC;""", ["%"+project_name+"%"])
-        elif project_name == None and keyword != None:
-            cursor.execute("""SELECT *
-                            FROM temp_projects
-                            LEFT JOIN temp_keywords ON temp_keywords.k_project_id = temp_projects.project_id
-                            WHERE keyword_names LIKE %s
-                            ORDER BY COALESCE(release_date, end_date, start_date) DESC;""", ["%"+keyword+"%"])
-        else:
-            cursor.execute("""SELECT *
-                            FROM temp_projects
-                            LEFT JOIN temp_keywords ON temp_keywords.k_project_id = temp_projects.project_id
-                            ORDER BY COALESCE(release_date, end_date, start_date) DESC;""")
+        # If keyword is searched
+        if keyword:
+            keyword_query = """SELECT DISTINCT *, 
+                                                GROUP_CONCAT(DISTINCT a.author_name ORDER BY pa.author_order SEPARATOR ', ') AS author_names, 
+                                                GROUP_CONCAT(DISTINCT k.keyword_name SEPARATOR ', ') as keyword_names
+                                FROM projects p
+                                JOIN project_authors pa ON p.project_id = pa.project_id
+                                JOIN authors a ON pa.author_id = a.author_id
+                                LEFT JOIN project_keywords p_k ON p_k.project_id = p.project_id
+                                LEFT JOIN keywords k ON k.keyword_id = p_k.keyword_id
+                                WHERE (
+                                    p.project_id IN (
+                                        SELECT project_id
+                                        FROM project_authors
+                                        WHERE project_name LIKE %s
+                                        AND project_authors.author_id IN (
+                                            SELECT a.author_id
+                                            FROM authors a
+                                            LEFT JOIN other_names ON a.author_id = other_names.author_id
+                                            WHERE a.author_name LIKE %s OR other_names.other_name LIKE %s
+                                        )
+                                    )
+                                )
+                                AND (p_k.keyword_id IN (
+                                        SELECT keyword_id
+                                        FROM keywords
+                                        WHERE keyword_name LIKE %s
+                                    )
+                                )
+                                GROUP BY p.project_name
+                                ORDER BY COALESCE(year, release_date, end_date, start_date) DESC;"""
+            
+            cursor.execute(keyword_query, ["%"+project_name+"%", "%"+author+"%", "%"+author+"%", "%"+keyword+"%"])
+            projects = cursor.fetchall()
+            projects = null_to_string(projects)
 
-        projects = cursor.fetchall()
-        projects = null_to_string(projects)
+            # Convert keyword names from concatenated string list to actual list
+            for i in projects:
+                i['keyword_names'] = i['keyword_names'].split(', ')
 
-        #Get keywords as a list to create links for keywords
-        cursor.execute("""SELECT projects.project_id, keywords.keyword_name
-                        FROM project_keywords
-                        INNER JOIN keywords ON keywords.keyword_id = project_keywords.keyword_id
-                        INNER JOIN projects ON projects.project_id = project_keywords.project_id""")
-        keywords = cursor.fetchall()
-        data = [1, 'foo']
-        return render_template("project_results.html", projects=projects, keywords=keywords, search=search, jsprojects=json.dumps(data))
+            return render_template("project_results.html", projects=projects, search=search)
 
 @app.route("/projects/search/<project_name>" , defaults={"keyword": None})
 @app.route("/projects/search/<project_name>/<keyword>")

@@ -9,7 +9,7 @@
                 $(this).find("span:last").remove();
             });
 
-            $('.btn').click(function() {
+            $('.btn btn-link shadow-none').click(function() {
                 var text = $(this).text()
                 if(text === 'Hide Summary'){
                     $(this).html('Show Summary');
@@ -35,6 +35,64 @@
                     more_authors.show();
                 }
             });
+
+            const cardDeck = document.querySelector('.project_container')
+            const cards = Array.from(cardDeck.querySelectorAll('.card'));
+
+            function sortCardsByYearAsc() {
+                cards.sort((cardA, cardB) => {
+                  const yearA = parseInt(cardA.querySelector('.card-year').textContent);
+                  const yearB = parseInt(cardB.querySelector('.card-year').textContent);
+                  return yearA - yearB;
+                });
+                cardDeck.innerHTML = '';
+                cards.forEach(card => cardDeck.appendChild(card));
+            }
+
+            function sortCardsByYearDesc() {
+                cards.sort((cardA, cardB) => {
+                  const yearA = parseInt(cardA.querySelector('.card-year').textContent);
+                  const yearB = parseInt(cardB.querySelector('.card-year').textContent);
+                  return yearB - yearA;
+                });
+                cardDeck.innerHTML = '';
+                cards.forEach(card => cardDeck.appendChild(card));
+            }
+
+            function sortCardsByNameAsc() {
+                cards.sort((cardA, cardB) => {
+                    const nameA = cardA.querySelector('.card-header').textContent.toLowerCase();
+                    const nameB = cardB.querySelector('.card-header').textContent.toLowerCase();
+                    return nameA.localeCompare(nameB);
+                });
+                cardDeck.innerHTML = '';
+                cards.forEach(card => cardDeck.appendChild(card));
+            }
+
+            function sortCardsByNameDesc() {
+                cards.sort((cardA, cardB) => {
+                    const nameA = cardA.querySelector('.card-header').textContent.toLowerCase();
+                    const nameB = cardB.querySelector('.card-header').textContent.toLowerCase();
+                    return nameB.localeCompare(nameA);
+                });
+                cardDeck.innerHTML = '';
+                cards.forEach(card => cardDeck.appendChild(card));
+            }
+            
+            const sortSelect = document.getElementById('sort_results');
+
+            sortSelect.addEventListener('change', () => {
+                const selectedValue = sortSelect.value;
+                if (selectedValue === "Date (Newest)") {
+                    sortCardsByYearDesc();
+                } else if (selectedValue === "Date (Oldest)") {
+                    sortCardsByYearAsc();
+                } else if (selectedValue === "Ascending") {
+                    sortCardsByNameAsc();
+                } else if (selectedValue === "Descending") {
+                    sortCardsByNameDesc();
+                }
+            })
         });
     </script>
 {% endblock %}
@@ -46,17 +104,55 @@
 {% block main %}
 
 <div>
-    <h3>Results for '{{search['project_name']}}': {{ projects|length }}</h3>
-    <br>
+    <h3>Search Results - {{ projects|length }}</h3>
 </div>
+<br>
 
-{% for row in projects %}
+<form action="/projects" method="post">
+    <div class="d-flex justify-content-center">
+        <div class="form-group">
+            <input class="form-control" name="project_name" type="text" placeholder="Project Name" value="{{ search['project_name'] }}">
+        </div>   
+    </div>
+    <div class="d-flex justify-content-center">
+        <div class="form-group">
+            <input class="form-control" name="author" type="text" placeholder="Author" value="{{ search['author'] }}">
+        </div>   
+    </div>
+    <div class="d-flex justify-content-center">
+        <div class="form-group">
+            <input class="form-control" name="keyword" type="text" placeholder="Keyword" value="{{ search['keyword'] }}">
+        </div>   
+    </div>
+    <div class="d-flex justify-content-center">
+        <div class="form-group">
+            <button class="btn btn-primary" type="submit">Search</button>
+        </div>
+    </div>
+</form>
+
+<div style="width: 30%; float: right; text-align: center">
+    <select class="form-control" name="sort_results" id="sort_results" style="float: right; width: 50%">
+        <option value="Date (Newest)">Date (Newest)</option>
+        <option value="Date (Oldest)">Date (Oldest)</option>
+        <option value="Ascending">Ascending</option>
+        <option value="Descending">Descending</option>
+    </select>
+    <label for="sort_results" style="float: right; padding-right: 7px; padding-top: 8px;">Sort By:</label>
+</div>
+<br>
+<br>
+
 <div class="project_container">
-    <div class="card" style="text-align:left;">
+{% for row in projects %}
+    <div class="card" style="text-align:left; margin-bottom: 20px;">
         <h5 class="card-header"><a href="/projects/{{ row['project_id'] }}">{{ row["project_name"] }}</a></h5>
         <div class="card-body">
             {% if row['year'] %}
-                <p><b>Year: </b>{{ row['year'] }}</p>
+                <p>
+                    <b>Year: </b>
+                    <span class="card-year">{{ row['year'] }}</span>
+                </p>
             {% endif %}
             
             {% if row['release_date'] != '' %}
@@ -65,10 +161,10 @@
                 <p><b>Dates: </b>{{ row['start_date'] }} - {{ row['end_date'] }}</p>
             {% endif %}
             {% if row['author_names']|length < 400 %}
-                <p class="card-text"><b>Contributors:</b>{{ row["author_names"] }}</p>
+                <p class="card-text"><b>Contributors: </b>{{ row["author_names"] }}</p>
             {% else %}
                 <p class="card-text">
-                    <b>Contributors:</b>
+                    <b>Contributors: </b>
                     {{ row["author_names"][:400] }}<span id="points">...</span><span class="more_authors" id="more_authors" style="display: none;">{{ row["author_names"][400:] }}</span>
                     <br>
                     <a class="author_btn">
@@ -93,13 +189,11 @@
                 </p>
             {% endif %}
             
-            {% if row["k_project_id"] %}
+            {% if row["keyword_names"] != [''] %}
                 <p><b>Keywords:</b>
                     <span class="keyword_container">
-                        {% for keyword in keywords %}
-                            {% if keyword['project_id'] == row['project_id'] %}
-                                <a href="/keywords/{{ keyword['keyword_name'] }}">{{ keyword['keyword_name'] }}</a><span id="comma">,</span>
-                            {% endif %}
+                        {% for keyword in row['keyword_names'] %}
+                            <a href="/keywords/{{ keyword }}">{{ keyword }}</a><span id="comma">,</span>
                         {% endfor %}
                     </span>
                 </p>
@@ -123,9 +217,8 @@
             {% endif %}
         </div>
     </div>
-    <br>
-</div>
 {% endfor %}
+</div>
 
 
 {% endblock %}
