@@ -112,84 +112,54 @@ def projects():
         project_name = search['project_name']
         keyword = search['keyword']
         author = search["author"]
+        tag = search["tag"]
 
         # If keyword not included in search
-        if not keyword:
-            author_query = """SELECT DISTINCT *, 
-                                                GROUP_CONCAT(DISTINCT a.author_name ORDER BY pa.author_order SEPARATOR ', ') AS author_names, 
-                                                GROUP_CONCAT(DISTINCT k.keyword_name SEPARATOR ', ') as keyword_names
-                                FROM projects p
-                                JOIN project_authors pa ON p.project_id = pa.project_id
-                                JOIN authors a ON pa.author_id = a.author_id
-                                LEFT JOIN project_keywords p_k ON p_k.project_id = p.project_id
-                                LEFT JOIN keywords k ON k.keyword_id = p_k.keyword_id
-                                WHERE (
-                                    p.project_id IN (
-                                        SELECT project_id
-                                        FROM project_authors
-                                        WHERE project_name LIKE %s
-                                        AND project_authors.author_id IN (
-                                            SELECT a.author_id
-                                            FROM authors a
-                                            LEFT JOIN other_names ON a.author_id = other_names.author_id
-                                            WHERE a.author_name LIKE %s OR other_names.other_name LIKE %s
-                                        )
+        project_query = """SELECT DISTINCT *, 
+                        GROUP_CONCAT(DISTINCT a.author_name ORDER BY pa.author_order SEPARATOR ', ') AS author_names, 
+                        GROUP_CONCAT(DISTINCT k.keyword_name SEPARATOR ', ') as keyword_names
+                            FROM projects p
+                            JOIN project_authors pa ON p.project_id = pa.project_id
+                            JOIN authors a ON pa.author_id = a.author_id
+                            LEFT JOIN project_keywords p_k ON p_k.project_id = p.project_id
+                            LEFT JOIN keywords k ON k.keyword_id = p_k.keyword_id
+                            WHERE (
+                                p.project_id IN (
+                                    SELECT project_id
+                                    FROM project_authors
+                                    WHERE project_name LIKE %s
+                                    AND project_authors.author_id IN (
+                                        SELECT a.author_id
+                                        FROM authors a
+                                        LEFT JOIN other_names ON a.author_id = other_names.author_id
+                                        WHERE a.author_name LIKE %s OR other_names.other_name LIKE %s
                                     )
                                 )
-                                GROUP BY p.project_name
-                                ORDER BY COALESCE(year, release_date, end_date, start_date) DESC;"""
-            
-            cursor.execute(author_query, ["%"+project_name+"%","%"+author+"%", "%"+author+"%"])
-            projects = cursor.fetchall()
-            projects = null_to_string(projects)
-            
-            # Convert keyword names from concatenated string list to actual list
-            for i in projects:
-                i['keyword_names'] = i['keyword_names'].split(', ')
-            
-            return render_template("project_results.html", projects=projects, search=search)
+                            )
+                            AND (
+                                (primary_tag LIKE %s AND primary_tag IS NOT NULL) OR (secondary_tag LIKE %s AND secondary_tag IS NOT NULL) OR %s = %s
+                            )
+                            AND (
+                                p_k.keyword_id IN (
+                                    SELECT keyword_id
+                                    FROM keywords
+                                    WHERE keyword_name LIKE %s
+                                )
+                                OR %s = %s
+                            )
+                            GROUP BY p.project_name
+                            ORDER BY COALESCE(year, release_date, end_date, start_date) DESC;
+                            """
         
-        # If keyword is searched
-        if keyword:
-            keyword_query = """SELECT DISTINCT *, 
-                                                GROUP_CONCAT(DISTINCT a.author_name ORDER BY pa.author_order SEPARATOR ', ') AS author_names, 
-                                                GROUP_CONCAT(DISTINCT k.keyword_name SEPARATOR ', ') as keyword_names
-                                FROM projects p
-                                JOIN project_authors pa ON p.project_id = pa.project_id
-                                JOIN authors a ON pa.author_id = a.author_id
-                                LEFT JOIN project_keywords p_k ON p_k.project_id = p.project_id
-                                LEFT JOIN keywords k ON k.keyword_id = p_k.keyword_id
-                                WHERE (
-                                    p.project_id IN (
-                                        SELECT project_id
-                                        FROM project_authors
-                                        WHERE project_name LIKE %s
-                                        AND project_authors.author_id IN (
-                                            SELECT a.author_id
-                                            FROM authors a
-                                            LEFT JOIN other_names ON a.author_id = other_names.author_id
-                                            WHERE a.author_name LIKE %s OR other_names.other_name LIKE %s
-                                        )
-                                    )
-                                )
-                                AND (p_k.keyword_id IN (
-                                        SELECT keyword_id
-                                        FROM keywords
-                                        WHERE keyword_name LIKE %s
-                                    )
-                                )
-                                GROUP BY p.project_name
-                                ORDER BY COALESCE(year, release_date, end_date, start_date) DESC;"""
-            
-            cursor.execute(keyword_query, ["%"+project_name+"%", "%"+author+"%", "%"+author+"%", "%"+keyword+"%"])
-            projects = cursor.fetchall()
-            projects = null_to_string(projects)
-
-            # Convert keyword names from concatenated string list to actual list
-            for i in projects:
-                i['keyword_names'] = i['keyword_names'].split(', ')
-
-            return render_template("project_results.html", projects=projects, search=search)
+        cursor.execute(project_query, ["%"+project_name+"%", "%"+author+"%", "%"+author+"%", "%"+tag+"%", "%"+tag+"%", "%"+tag+"%", "%"+"%", "%"+keyword+"%","%"+keyword+"%","%"+"%"])
+        projects = cursor.fetchall()
+        projects = null_to_string(projects)
+        
+        # Convert keyword names from concatenated string list to actual list
+        for i in projects:
+            i['keyword_names'] = i['keyword_names'].split(', ')
+        
+        return render_template("project_results.html", projects=projects, search=search)
 
 @app.route("/projects/search/<project_name>" , defaults={"keyword": None})
 @app.route("/projects/search/<project_name>/<keyword>")
