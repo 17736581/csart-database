@@ -224,6 +224,14 @@
                 </p>
             {% endif %}
 
+            {% if row["cited_by"] %}
+                <p><b>Citations:</b>
+                    <span class="keyword_container">
+                        {{ row['cited_by'] }}
+                    </span>
+                </p>
+            {% endif %}
+
             {% if row['type_name'] %}
             <p><b>Type: </b>{{ row['type_name'] }}</p>
             {% endif %}

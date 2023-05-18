@@ -82,6 +82,12 @@
             {% endfor %}
         </div>
     {% endif %}
+    {% if project_results["cited_by"] %}
+        <div class="citations">
+            <b>Citations</b>:
+            {{ project_results["cited_by"] }}
+        </div>
+    {% endif %}
     {% if project_results["type_name"] %}
         <div class="type">
             <b>Type: </b>{{ project_results['type_name'] }}
