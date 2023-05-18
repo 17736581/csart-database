@@ -93,6 +93,26 @@
                     sortCardsByNameDesc();
                 }
             })
+
+            const author_input = $("#author_input");
+
+            $(author_input).keypress(function(){
+                handler.preventDefault();
+
+                var input_text = $(this).text();
+
+                $.ajax({
+                    url: "/author_query",
+                    type: "POST",
+                    data: {input_text: input_text},
+                    success: function(data) {
+
+                    }
+                })
+                
+            })
+
+            $('.basicAutoComplete').autoComplete();
         });
     </script>
 {% endblock %}
@@ -116,7 +136,7 @@
     </div>
     <div class="d-flex justify-content-center">
         <div class="form-group">
-            <input class="form-control" name="author" type="text" placeholder="Author" value="{{ search['author'] }}">
+            <input class="form-control basicAutoComplete" name="author" type="text" placeholder="Author" data-url="/author_query" autocomplete="off" value="{{ search['author'] }}">
         </div>   
     </div>
     <div class="d-flex justify-content-center">

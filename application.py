@@ -9,7 +9,6 @@ from flask import Flask, render_template, request, jsonify, session, redirect
 from flask_mysqldb import MySQL
 from werkzeug.security import check_password_hash, generate_password_hash
 from helpers import login_required, null_to_string, string_to_null
-import json
 
 app = Flask(__name__)
 
@@ -160,6 +159,25 @@ def projects():
             i['keyword_names'] = i['keyword_names'].split(', ')
         
         return render_template("project_results.html", projects=projects, search=search)
+
+@app.route("/author_query", methods=["GET"])
+def author_query():
+    cursor = mysql.connection.cursor()
+
+    q = request.args['q']
+
+    author_query = """SELECT DISTINCT author_name 
+                FROM authors
+                LEFT JOIN other_names ON other_names.author_id = authors.author_id
+                WHERE author_name LIKE %s OR other_name LIKE %s
+                ORDER BY author_name ASC"""
+
+    cursor.execute(author_query, ["%"+q+"%", "%"+q+"%"])
+    authors = cursor.fetchall()
+    authors = [k['author_name'] for k in authors]
+    cursor.close()
+    
+    return jsonify(authors)
 
 @app.route("/projects/search/<project_name>" , defaults={"keyword": None})
 @app.route("/projects/search/<project_name>/<keyword>")
