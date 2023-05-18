@@ -1,5 +1,13 @@
 {% extends "layout.html" %}
 
+{% block head %}
+<script>
+    $(document).ready(function() {
+        $('.basicAutoComplete').autoComplete();
+    });
+</script>
+{% endblock %}
+
 {% block title %}
     Author Search
 {% endblock %}
@@ -11,7 +19,7 @@
     <form action="/authors" method="post">
         <div class="d-flex justify-content-center">
             <div class="form-group">
-                <input class="form-control" name="author_name" type="search" placeholder="Author Name">
+                <input class="form-control basicAutoComplete" name="author_name" type="search" data-url="/author_autocomp" autocomplete="off" placeholder="Author Name">
             </div>
         </div>
         <div class="d-flex justify-content-center">

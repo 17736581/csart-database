@@ -160,8 +160,8 @@ def projects():
         
         return render_template("project_results.html", projects=projects, search=search)
 
-@app.route("/author_query", methods=["GET"])
-def author_query():
+@app.route("/author_autocomp", methods=["GET"])
+def author_autocomp():
     cursor = mysql.connection.cursor()
 
     q = request.args['q']
@@ -178,6 +178,46 @@ def author_query():
     cursor.close()
     
     return jsonify(authors)
+
+@app.route("/keyword_autocomp", methods=["GET"])
+def keyword_autocomp():
+    cursor = mysql.connection.cursor()
+
+    q = request.args['q']
+
+    keyword_query = """SELECT DISTINCT keyword_name
+                FROM keywords
+                WHERE keyword_name LIKE %s
+                ORDER BY keyword_name ASC"""
+
+    cursor.execute(keyword_query, ["%"+q+"%"])
+    keywords = cursor.fetchall()
+    keywords = [k['keyword_name'] for k in keywords]
+    cursor.close()
+    
+    return jsonify(keywords)
+
+@app.route("/tag_autocomp", methods=["GET"])
+def tag_autocomp():
+    cursor = mysql.connection.cursor()
+
+    q = request.args['q']
+
+    tag_query = """SELECT tag_name
+                    FROM (
+                    SELECT primary_tag AS tag_name FROM projects
+                    UNION
+                    SELECT secondary_tag AS tag_name FROM projects
+                    ) AS subquery
+                    WHERE tag_name LIKE %s;
+                    """
+
+    cursor.execute(tag_query, ["%"+q+"%"])
+    tags = cursor.fetchall()
+    tags = [k['tag_name'] for k in tags]
+    cursor.close()
+    
+    return jsonify(tags)
 
 @app.route("/projects/search/<project_name>" , defaults={"keyword": None})
 @app.route("/projects/search/<project_name>/<keyword>")
