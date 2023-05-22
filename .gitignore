@@ -2,4 +2,3 @@ venv
 __pycache__
 network.json
 workspace.code-workspace
-*sql
