@@ -112,7 +112,9 @@
                 
             })
 
-            $('.basicAutoComplete').autoComplete();
+            $('.basicAutoComplete').autoComplete({
+                minLength: 0
+            });
         });
     </script>
 {% endblock %}
