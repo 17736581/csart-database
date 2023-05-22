@@ -3,7 +3,9 @@
 {% block head %}
     <script>
         $(document).ready(function() {
-            $('.basicAutoComplete').autoComplete();
+            $('.basicAutoComplete').autoComplete({
+                minLength: 1
+            });
         });
     </script>
 {% endblock %}

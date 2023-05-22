@@ -108,10 +108,10 @@ def projects():
         cursor = mysql.connection.cursor()
         search = request.form.to_dict()
 
-        project_name = search['project_name']
-        keyword = search['keyword']
-        author = search["author"]
-        tag = search["tag"]
+        project_name = search['project_name'].strip()
+        keyword = search['keyword'].strip()
+        author = search["author"].strip()
+        tag = search["tag"].strip()
 
         # If keyword not included in search
         project_query = """SELECT DISTINCT *, 
@@ -377,6 +377,7 @@ def projects_edit(id):
                                 url = %s,
                                 doi = %s,
                                 statement = %s,
+                                full_text = %s,
                                 year = %s,
                                 start_date = %s,
                                 end_date = %s,
@@ -399,6 +400,7 @@ def projects_edit(id):
                                        form_data['url'], 
                                        form_data['doi'],
                                        form_data['statement'], 
+                                       form_data['full_text'],
                                        form_data['year'],
                                        form_data['start_date'], 
                                        form_data['end_date'], 
@@ -482,21 +484,21 @@ def projects_edit(id):
 @app.route("/projects/<id>", methods=["DELETE"])
 @login_required
 def projects_delete(id):
-    # cursor = mysql.connection.cursor()
+    cursor = mysql.connection.cursor()
 
-    # project_authors_del_query = """DELETE FROM project_authors WHERE project_id = %s"""
-    # cursor.execute(project_authors_del_query, [id])
-    # mysql.connection.commit()
+    project_authors_del_query = """DELETE FROM project_authors WHERE project_id = %s"""
+    cursor.execute(project_authors_del_query, [id])
+    mysql.connection.commit()
 
-    # project_keywords_del_query = """DELETE FROM project_keywords WHERE project_id = %s"""
-    # cursor.execute(project_keywords_del_query, [id])
-    # mysql.connection.commit()
+    project_keywords_del_query = """DELETE FROM project_keywords WHERE project_id = %s"""
+    cursor.execute(project_keywords_del_query, [id])
+    mysql.connection.commit()
 
-    # project_del_query = """DELETE FROM projects WHERE project_id = %s"""
-    # cursor.execute(project_del_query, [id])
-    # mysql.connection.commit()
+    project_del_query = """DELETE FROM projects WHERE project_id = %s"""
+    cursor.execute(project_del_query, [id])
+    mysql.connection.commit()
 
-    # cursor.close()
+    cursor.close()
     return f"Deleted Record of ID: {id}"
 
 
@@ -676,12 +678,13 @@ def add():
 
         #Add project to projects table
         try:
-            project_insert = """INSERT INTO projects(project_name, url, doi, statement, year, start_date, end_date, release_date, country, funding_org, funding_amount, type_id, cited_by, journal, volume, issue, pages, publisher, project_lead, primary_tag, secondary_tag) 
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+            project_insert = """INSERT INTO projects(project_name, url, doi, statement, full_text, year, start_date, end_date, release_date, country, funding_org, funding_amount, type_id, cited_by, journal, volume, issue, pages, publisher, project_lead, primary_tag, secondary_tag) 
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
             cursor.execute(project_insert, [form_data['project_name'], 
                                        form_data['url'], 
                                        form_data['doi'],
-                                       form_data['statement'], 
+                                       form_data['statement'],
+                                       form_data['full_text'],
                                        form_data['year'],
                                        form_data['start_date'], 
                                        form_data['end_date'], 
