@@ -147,7 +147,7 @@ def projects():
                                 OR %s = %s
                             )
                             GROUP BY p.project_name
-                            ORDER BY COALESCE(year, release_date, end_date, start_date) DESC;
+                            ORDER BY COALESCE(release_date, year, end_date, start_date) DESC;
                             """
         
         cursor.execute(project_query, ["%"+project_name+"%", "%"+author+"%", "%"+author+"%", "%"+tag+"%", "%"+tag+"%", "%"+tag+"%", "%"+"%", "%"+keyword+"%","%"+keyword+"%","%"+"%"])
