@@ -41,9 +41,30 @@
 
             function sortCardsByYearAsc() {
                 cards.sort((cardA, cardB) => {
-                  const yearA = parseInt(cardA.querySelector('.card-year').textContent);
-                  const yearB = parseInt(cardB.querySelector('.card-year').textContent);
-                  return yearA - yearB;
+                    var varDateA = '.release-date';
+                    var varDateB = '.release-date';
+
+                    if (cardA.querySelector('.release-date') === null) {
+                        varDateA = '.card-year';
+                        if (cardA.querySelector('.card-year') === null) {
+                            varDateA = '.start-date';
+                            if (cardA.querySelector('.start-date') === null) {
+                                return 1;
+                            }
+                        }
+                    }
+                    if (cardB.querySelector('.release-date') === null) {
+                        varDateB = '.card-year';
+                        if (cardB.querySelector('.card-year') === null) {
+                            varDateB = '.start-date';
+                            if (cardB.querySelector('.start-date') === null) {
+                                return -1;
+                            }
+                        }
+                    }
+                    const yearA = new Date(cardA.querySelector(varDateA).textContent);
+                    const yearB = new Date(cardB.querySelector(varDateB).textContent);
+                    return yearA - yearB;
                 });
                 cardDeck.innerHTML = '';
                 cards.forEach(card => cardDeck.appendChild(card));
@@ -51,9 +72,30 @@
 
             function sortCardsByYearDesc() {
                 cards.sort((cardA, cardB) => {
-                  const yearA = parseInt(cardA.querySelector('.card-year').textContent);
-                  const yearB = parseInt(cardB.querySelector('.card-year').textContent);
-                  return yearB - yearA;
+                    var varDateA = '.release-date';
+                    var varDateB = '.release-date';
+
+                    if (cardA.querySelector('.release-date') === null) {
+                        varDateA = '.card-year';
+                        if (cardA.querySelector('.card-year') === null) {
+                            varDateA = '.start-date';
+                            if (cardA.querySelector('.start-date') === null) {
+                                return 1;
+                            }
+                        }
+                    }
+                    if (cardB.querySelector('.release-date') === null) {
+                        varDateB = '.card-year';
+                        if (cardB.querySelector('.card-year') === null) {
+                            varDateB = '.start-date';
+                            if (cardB.querySelector('.start-date') === null) {
+                                return -1;
+                            }
+                        }
+                    }
+                    const yearA = new Date(cardA.querySelector(varDateA).textContent);
+                    const yearB = new Date(cardB.querySelector(varDateB).textContent);
+                    return yearB - yearA;
                 });
                 cardDeck.innerHTML = '';
                 cards.forEach(card => cardDeck.appendChild(card));
@@ -73,6 +115,12 @@
                 cards.sort((cardA, cardB) => {
                     const nameA = cardA.querySelector('.card-header').textContent.toLowerCase();
                     const nameB = cardB.querySelector('.card-header').textContent.toLowerCase();
+                    if (cardA === null) {
+                        return 1;
+                    }
+                    if (cardB === null) {
+                        return -1;
+                    }
                     return nameB.localeCompare(nameA);
                 });
                 cardDeck.innerHTML = '';
@@ -183,9 +231,9 @@
             {% endif %}
             
             {% if row['release_date'] != '' %}
-                <p><b>Release Date: </b>{{ row['release_date'] }}</p>
+                <p><b>Release Date: </b><span class="release-date">{{ row['release_date'] }}</span></p>
             {% elif row['start_date'] != '' %}
-                <p><b>Dates: </b>{{ row['start_date'] }} - {{ row['end_date'] }}</p>
+                <p><b>Dates: </b><span class="start-date">{{ row['start_date'] }}</span> - {{ row['end_date'] }}</p>
             {% endif %}
             {% if row['author_names']|length < 400 %}
                 <p class="card-text"><b>Contributors: </b>{{ row["author_names"] }}</p>

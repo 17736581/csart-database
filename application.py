@@ -15,8 +15,8 @@ app = Flask(__name__)
 if __name__ == "__main__":
     app.run(host="0.0.0.0")
 
-app.config["MYSQL_USER"] = "root"
-# app.config["MYSQL_PASSWORD"] = """u1ozP`H+g^A"Ndw"""
+app.config["MYSQL_USER"] = "admin"
+app.config["MYSQL_PASSWORD"] = """2023@csart@bmc"""
 app.config["MYSQL_DB"] = "csart_db"
 app.config["MYSQL_CURSORCLASS"] = "DictCursor"
 app.config["JSON_AS_ASCII"] = False
@@ -147,7 +147,7 @@ def projects():
                                 OR %s = %s
                             )
                             GROUP BY p.project_name
-                            ORDER BY COALESCE(year, release_date, end_date, start_date) DESC;
+                            ORDER BY COALESCE(release_date, year, end_date, start_date) DESC;
                             """
         
         cursor.execute(project_query, ["%"+project_name+"%", "%"+author+"%", "%"+author+"%", "%"+tag+"%", "%"+tag+"%", "%"+tag+"%", "%"+"%", "%"+keyword+"%","%"+keyword+"%","%"+"%"])

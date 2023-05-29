@@ -40,3 +40,7 @@ main .user-form
     width: 65%;
     margin-bottom: 1em;
 }
+
+#csart-logo {
+    border-radius: 15%;
+}
