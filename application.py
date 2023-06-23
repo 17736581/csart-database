@@ -9,6 +9,7 @@ from flask import Flask, render_template, request, jsonify, session, redirect
 from flask_mysqldb import MySQL
 from werkzeug.security import check_password_hash, generate_password_hash
 from helpers import login_required, null_to_string, string_to_null
+import markdown
 
 app = Flask(__name__)
 
@@ -309,7 +310,9 @@ def projects_id(id):
     cursor.execute(keyword_query, [id])
     keyword_results = cursor.fetchall()
 
-    return render_template("project_profile.html", project_results=project_results, author_results=author_results, keyword_results=keyword_results)
+    html = get_html(id)
+
+    return render_template("project_profile.html", project_results=project_results, author_results=author_results, keyword_results=keyword_results, html=html)
 
 @app.route("/projects/<id>/edit", methods=["GET", "POST"])
 @login_required
@@ -501,6 +504,35 @@ def projects_delete(id):
     cursor.close()
     return f"Deleted Record of ID: {id}"
 
+def get_html(id):
+    cursor = mysql.connection.cursor()
+
+    markdown_query = "SELECT project_id, project_name, full_text FROM projects WHERE project_id = %s"
+    cursor.execute(markdown_query, [id])
+    result = cursor.fetchone()
+
+    cursor.close()
+    
+    if result["full_text"]:
+        html = markdown.markdown(result["full_text"])
+        return html
+
+@app.route("/projects/<id>/markdown")
+@login_required
+def convert_markdown(id):
+    cursor = mysql.connection.cursor()
+
+    markdown_query = "SELECT project_id, project_name, full_text FROM projects WHERE project_id = %s"
+    cursor.execute(markdown_query, [id])
+    result = cursor.fetchone()
+
+    cursor.close()
+    
+    if result["full_text"]:
+        html = markdown.markdown(result["full_text"])
+        return render_template("project_text.html", project_id=result["project_id"], project_name=result["project_name"], html=html)
+    else:
+        return render_template("project_text.html", project_id=result["project_id"], project_name=result["project_name"], html="Full Text Not Found")
 
 # route to search authors
 @app.route("/authors", methods=["GET", "POST"])

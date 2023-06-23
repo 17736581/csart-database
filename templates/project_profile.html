@@ -27,7 +27,7 @@
             });
 
             $("#delete_project").click(function(){
-                if (confirm("Delete project?")) {
+                if (confirm("Permanently delete project?\nThis cannot be undone.")) {
                     $.ajax({
                         method: "DELETE",
                         url: "/projects/{{ project_results['project_id'] }}",
@@ -52,7 +52,16 @@
 
 {% block main %}
 <div class="heading" style="text-align: left; margin-bottom:1em;">
-    <h2>{{ project_results["project_name"] }}</h2>
+    <span class="dropleft" style="display: inline-block; text-align: right; float: right;">
+        <img src="/static/three-dots-vertical.svg" alt="" class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width: 25px; height:25px;">
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+          <a class="dropdown-item" href="/projects/{{ project_results['project_id'] }}/edit">Edit</a>
+          <a class="dropdown-item" href="#" id="delete_project">Delete Project</a>
+        </div>
+    </span>
+    <span style="display:block; width: 85%; text-align: left;">
+        <h2>{{ project_results["project_name"] }}</h2>
+    </span>
 </div>
 <hr>
 <div class="author-container" style="text-align: left;">
@@ -120,10 +129,39 @@
             <b>Funding Amount:</b> ${{ project_results['funding_amount'] }}
         {% endif %}
     </div>
+    {% if project_results["full_text"] %}
+        <!-- <div class="full_text">
+            <a href="/projects/{{ project_results['project_id'] }}/markdown">Full Text</a>
+        </div> -->
+        <!-- Button trigger modal -->
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModalLong">
+            View Full Text
+        </button>
+    {% endif %}
 </div>
 
-<a href="/projects/{{ project_results['project_id'] }}/edit"><button class="btn btn-primary">Edit Project</button></a>
+<!-- Modal -->
+<div class="modal fade" id="exampleModalLong" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle">{{ project_results["project_name"] }}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                {{ html|safe }}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-<a><button class="btn btn-danger" id="delete_project">Delete Project</button></a>
+<!-- <a href="/projects/{{ project_results['project_id'] }}/edit"><button class="btn btn-primary">Edit Project</button></a>
+
+<a><button class="btn btn-danger" id="delete_project">Delete Project</button></a> -->
 
 {% endblock %}

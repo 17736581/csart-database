@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    {{ project_name }} - Full Text
+{% endblock %}
+
+{% block main %}
+    <div class="heading" style="text-align: left; margin-bottom:1em;">
+        <a href="/projects/{{ project_id }}" style="text-align: left;">Back</a>
+        <h2>{{ project_name }}</h2>
+    </div>
+    <div>
+        
+    </div>
+    <hr>
+    {{ html|safe }}  
+{% endblock %}

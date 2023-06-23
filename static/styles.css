@@ -44,3 +44,13 @@ main .user-form
 #csart-logo {
     border-radius: 15%;
 }
+
+div.modal-body p {
+    width: 100%;
+    height: 100%;
+}
+
+div.modal-body p img {
+    max-width: 100%!important;
+    height: 100%;
+}
