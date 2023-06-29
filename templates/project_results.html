@@ -173,11 +173,6 @@
 
 {% block main %}
 
-<div>
-    <h3>Search Results - {{ projects|length }}</h3>
-</div>
-<br>
-
 <form action="/projects" method="post">
     <div class="d-flex justify-content-center">
         <div class="form-group">
@@ -205,6 +200,10 @@
         </div>
     </div>
 </form>
+
+<div>
+    <h4>Search Results - {{ projects|length }}</h4>
+</div>
 
 <div style="width: 30%; float: right; text-align: center">
     <select class="form-control" name="sort_results" id="sort_results" style="float: right; width: 50%">
