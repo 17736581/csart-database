@@ -10,17 +10,57 @@
     <p class="lead text-muted">
         Website for CSART research database entry, retrieval and modification.
     </p>
-    <br>
-    <!-- <p>
-        <a href="/projects"><button class="btn btn-secondary btn-lg" style="width: 30%;">Project Search</button></a>
-        <a href="/authors"><button class="btn btn-secondary btn-lg" style="width: 30%;">Author Search</button></a>
-        <a href="/keywords"><button class="btn btn-secondary btn-lg" style="width: 30%;">Keyword Search</button></a>
-    </p>
-    <br>
     <p>
-        <a href="/add"><button class="btn btn-primary btn-lg" style="width: 30%;">Add a Project</button></a>
-    </p> -->
-</div>
+        <a href="/projects" class="btn btn-primary my-2">View Projects</a>
+        <a href="/add" class="btn btn-secondary my-2">Add Project</a>
+    </p>
+    <hr>
+    <div class="album py-5">
+        <div class="container">
+            <div class="row">
+                {% for row in projects %}
+                    <div class="col-md-4">
+                        <div class="card mb-4 box-shadow" style="height: 100%;">
+                            <h6 class="card-header">{{ row['project_name'] }}</h6>
+                            <div class="card-body">
+                                <p class="card-text">
+                                    {% if row['author_names']|length < 400 %}
+                                        <p class="card-text"><b>Contributors: </b>{{ row["author_names"] }}</p>
+                                    {% else %}
+                                        <p class="card-text">
+                                            <b>Contributors: </b>
+                                            {{ row["author_names"][:400] }}<span id="points">...</span><span class="more_authors" id="more_authors" style="display: none;">{{ row["author_names"][400:] }}</span>
+                                            <br>
+                                            <a class="author_btn">
+                                                Show More
+                                            </a>
+                                        </p>
+                                    {% endif %}
+                                    {% if row["keyword_names"] != [''] %}
+                                        <p><b>Keywords:</b>
+                                            <span class="keyword_container">
+                                                {% for keyword in row['keyword_names'] %}
+                                                    <a href="/keywords/{{ keyword }}">{{ keyword }}</a>{% if not loop.last %},{% endif %}</span>
+                                                {% endfor %}
+                                            </span>
+                                        </p>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="card-footer">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <a href="projects/{{row['project_id']}}" class="btn btn-sm btn-outline-secondary">View</a>
+                                        <a href="projects/{{row['project_id']}}/edit" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                    </div>
+                                    <small class="text-muted">{{ row['year'] }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+    </div>
 
 
 {% endblock %}

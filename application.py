@@ -32,8 +32,29 @@ mysql = MySQL(app)
 # home page
 @app.route("/")
 @login_required
-def hello_world():
-    return render_template("index.html")
+def index():
+    cursor = mysql.connection.cursor()
+    project_query = """SELECT DISTINCT *, 
+                        GROUP_CONCAT(DISTINCT a.author_name ORDER BY pa.author_order SEPARATOR ', ') AS author_names, 
+                        GROUP_CONCAT(DISTINCT k.keyword_name SEPARATOR ', ') as keyword_names
+                            FROM projects p
+                            JOIN project_authors pa ON p.project_id = pa.project_id
+                            JOIN authors a ON pa.author_id = a.author_id
+                            LEFT JOIN project_keywords p_k ON p_k.project_id = p.project_id
+                            LEFT JOIN keywords k ON k.keyword_id = p_k.keyword_id
+                            GROUP BY p.project_name
+                            ORDER BY p.project_id DESC LIMIT 3;
+                            """
+    cursor.execute(project_query)
+    projects = cursor.fetchall()
+
+    projects = null_to_string(projects)
+        
+    # Convert keyword names from concatenated string list to actual list
+    for i in projects:
+        i['keyword_names'] = i['keyword_names'].split(', ')
+
+    return render_template("index.html", projects=projects)
 
 # @app.route("/register", methods=["GET", "POST"])
 # def register():
