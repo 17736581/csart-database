@@ -4,8 +4,8 @@
     Home
 {% endblock %}
 
-{% block main %}
-<div class="container">
+{% block home %}
+<section class="jumbotron text-center bg-white" style="margin: 0;">
     <h2>CSART Database</h2>
     <p class="lead text-muted">
         Website for CSART research database entry, retrieval and modification.
@@ -14,8 +14,8 @@
         <a href="/projects" class="btn btn-primary my-2">View Projects</a>
         <a href="/add" class="btn btn-secondary my-2">Add Project</a>
     </p>
-    <hr>
-    <div class="album py-5">
+</section>
+    <div class="album py-5 bg-light">
         <div class="container">
             <div class="row">
                 {% for row in projects %}

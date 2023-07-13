@@ -16,8 +16,8 @@ app = Flask(__name__)
 if __name__ == "__main__":
     app.run(host="0.0.0.0")
 
-app.config["MYSQL_USER"] = "admin"
-app.config["MYSQL_PASSWORD"] = """2023@csart@bmc"""
+app.config["MYSQL_USER"] = "root"
+app.config["MYSQL_PASSWORD"] = """"""
 app.config["MYSQL_DB"] = "csart_db"
 app.config["MYSQL_CURSORCLASS"] = "DictCursor"
 app.config["JSON_AS_ASCII"] = False
