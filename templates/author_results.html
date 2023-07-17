@@ -6,25 +6,27 @@
 
 {% block main %}
 <body>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Author Name</th>
-                <th>Other Names</th>
-                <th>Website</th>
-                <th style="width: 30%">Affiliations</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in author_results %}
+    <div class="table-responsive-sm">
+        <table class="table">
+            <thead>
                 <tr>
-                    <td><a href="/authors/{{ row['author_id'] }}">{{ row["author_name"] }}</a></td>
-                    <td>{{ row["other_name"] }}</td>
-                    <td>{{ row["website"] }}</td>
-                    <td>{{ row["affiliations"] }}</td>
+                    <th>Author Name</th>
+                    <th>Other Names</th>
+                    <th>Website</th>
+                    <th style="width: 30%">Affiliations</th>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                {% for row in author_results %}
+                    <tr>
+                        <td><a href="/authors/{{ row['author_id'] }}">{{ row["author_name"] }}</a></td>
+                        <td>{{ row["other_name"] }}</td>
+                        <td>{{ row["website"] }}</td>
+                        <td>{{ row["affiliations"] }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </body>
 {% endblock %}
