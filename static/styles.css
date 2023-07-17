@@ -18,6 +18,7 @@ main .user-form
 
 .container {
     padding-top: 2em;
+    padding-bottom: 2em;
 }
 
 #bootstrap-overrides td {

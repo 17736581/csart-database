@@ -33,57 +33,61 @@
     <h2>{{ author_results["author_name"] }}</h2>
 </div>
 <br>
-<table class="table">
-    <thead>
-        <tr>
-            <th>Author Name</th>
-            <th>Other Names</th>
-            <th>Email</th>
-            <th>Website</th>
-            <th>Statement</th>
-            <th>Affiliations</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><a href="/authors/{{ author_results['author_id'] }}">{{ author_results["author_name"] }}</a></td>
-            <td>{{ author_results["other_names"] }}</td>
-            <td>{{ author_results["email"] }}</td>
-            <td>{{ author_results["website"] }}</td>
-            <td>{{ author_results["statement"] }}</td>
-            <td>{{ author_results["affiliations"] }}</td>
-            <td><a href="/authors/{{ author_results['author_id'] }}/edit"><button class="btn btn-secondary">Edit</button></a></td>
-        </tr>
-    </tbody>
-</table>
+<div class="table-responsive-sm">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Author Name</th>
+                <th>Other Names</th>
+                <th>Email</th>
+                <th>Website</th>
+                <th>Statement</th>
+                <th>Affiliations</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><a href="/authors/{{ author_results['author_id'] }}">{{ author_results["author_name"] }}</a></td>
+                <td>{{ author_results["other_names"] }}</td>
+                <td>{{ author_results["email"] }}</td>
+                <td>{{ author_results["website"] }}</td>
+                <td>{{ author_results["statement"] }}</td>
+                <td>{{ author_results["affiliations"] }}</td>
+                <td><a href="/authors/{{ author_results['author_id'] }}/edit"><button class="btn btn-secondary">Edit</button></a></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
 <br>
 <h3>Projects</h3>
-<table class="table">
-    <thead>
-        <tr>
-            <th style="width: 25%">Project Name</th>
-            <th style="width: 25%">Authors</th>
-            <th style="width: 12%">Year</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for row in project_results %}
-        <tr>
-            <td><a href="/projects/{{ row['project_id'] }}">{{ row["project_name"] }}</a></td>
-            {% if row['authors']|length < 300 %}
-                <td>{{ row["authors"] }}</td>
-            {% else %}
-                <td>
-                    {{ row["authors"][:300] }}<span id="points">...</span><span id="more_authors" style="display: none;">{{ row["authors"][300:] }}</span>
-                    <a class="author_btn">
-                        Show More
-                    </a>
-                </td>
-            {% endif %}
-            <td>{{ row["year"] }}</td>
-        </tr>
-    {% endfor %}
-    </tbody>
-</table>
+<div class="table-responsive-sm">
+    <table class="table">
+        <thead>
+            <tr>
+                <th style="width: 25%">Project Name</th>
+                <th style="width: 25%">Authors</th>
+                <th style="width: 12%">Year</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in project_results %}
+            <tr>
+                <td><a href="/projects/{{ row['project_id'] }}">{{ row["project_name"] }}</a></td>
+                {% if row['authors']|length < 300 %}
+                    <td>{{ row["authors"] }}</td>
+                {% else %}
+                    <td>
+                        {{ row["authors"][:300] }}<span id="points">...</span><span id="more_authors" style="display: none;">{{ row["authors"][300:] }}</span>
+                        <a class="author_btn">
+                            Show More
+                        </a>
+                    </td>
+                {% endif %}
+                <td>{{ row["year"] }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}
